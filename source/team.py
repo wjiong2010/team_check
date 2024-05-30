@@ -76,6 +76,7 @@ class Team:
         def __init__(self):
             self.name_en = ''
             self.name_cn = ''
+            self.group = ''  # 'application' or 'system'
             self.work_modules = []
             self.work_apps = []
             self.work_gl_apps = []
@@ -96,7 +97,7 @@ class Team:
         for mb in self.members:
             if 'cr_result' == select:
                 summary_in_text += mb.cr_result_in_text()
-            if 'kpi' == select:
+            if 'kpi' == select and mb.group == 'application':
                 summary_in_text += mb.kpi_in_text()
 
         with open(txt, 'w', encoding='utf-8') as f:
@@ -109,6 +110,7 @@ class Team:
                     m = self.Member()
                     m.name_en = subNode.getAttribute('name_en')
                     m.name_cn = subNode.getAttribute('name_cn')
+                    m.group = node.nodeName
                     parse_work(m, subNode)
                     m.kpi = KPIForOnePerson(m.name_en, m.name_cn)
                     self.members.append(m)
@@ -117,6 +119,7 @@ class Team:
         for mb in self.members:
             print(mb.name_cn)
             print(mb.name_en)
+            print(mb.group)
             print(mb.work_apps)
             print(mb.work_modules)
             print(mb.work_gl_apps)
