@@ -1,10 +1,9 @@
+import os
 import xml.dom.minidom
 from xml.dom import DOMException
-
+from team import CR_ELEMENT_NODE
 import xlwt
 import xlrd
-
-CR_ELEMENT_NODE = 1
 
 
 class ResultLocation:
@@ -135,25 +134,29 @@ def __parse_errors(node, team):
                 __arrange_results(cr_res, team)
 
 
-def cr_parse_result(file, team):
-    try:
-        dom = xml.dom.minidom.parse(file)
-    except DOMException:
-        raise Exception(file + ' is NOT a well-formed XML file.')
+def cr_parse_result(r_path, xml_list, team):
+    for file in xml_list:
+        f_xml = os.path.join(r_path, file)
+        print(f"fpath: {f_xml}, fn: {xml_list}")
 
-    root = dom.documentElement
+        try:
+            dom = xml.dom.minidom.parse(str(f_xml))
+        except DOMException:
+            raise Exception(f_xml + ' is NOT a well-formed XML file.')
 
-    if root.nodeName != 'results':
-        raise Exception('XML has no \'Project\' element.')
+        root = dom.documentElement
 
-    # Get attributes of results
-    results_ver = __parse_attr(root, 'version')
-    print(results_ver)
+        if root.nodeName != 'results':
+            raise Exception('XML has no \'Project\' element.')
 
-    # for mb in app_tm.members:
-    #     print(mb.name_cn + '(' + mb.name_en + ')' + ' ')
+        # Get attributes of results
+        results_ver = __parse_attr(root, 'version')
+        print(results_ver)
 
-    for node in root.childNodes:
-        if CR_ELEMENT_NODE == node.nodeType:  # 1 is Element
-            if 'errors' == node.nodeName:
-                __parse_errors(node, team)
+        # for mb in app_tm.members:
+        #     print(mb.name_cn + '(' + mb.name_en + ')' + ' ')
+
+        for node in root.childNodes:
+            if CR_ELEMENT_NODE == node.nodeType:  # 1 is Element
+                if 'errors' == node.nodeName:
+                    __parse_errors(node, team)

@@ -1,6 +1,8 @@
 import xml.dom.minidom
 from xml.dom import DOMException
-from codereview import CR_ELEMENT_NODE
+from kpi import KPIForOnePerson
+
+CR_ELEMENT_NODE = 1
 
 
 def parse_work(m, node):
@@ -18,8 +20,46 @@ def parse_work(m, node):
                 print("UNKNOWN node type: " + subNode.nodeName)
 
 
+def kpi_head_text():
+    report_head = '''任务量等级： 5:非常饱满， 4:饱满，3：适中，2：不足，1：严重不足'''
+    report_main_seperator = '''================================================================================='''
+
+    kpi_text = report_head + '\n'
+    kpi_text += report_main_seperator + '\n\n'
+
+    return kpi_text
+
+
 class Team:
     class Member:
+        def cr_result_in_text(self):
+            s_text = ''
+            s_text += f"{self.name_cn}({self.name_en}):\n"
+            for cr in self.cr_result:
+                s_text += f"\t{cr.severity.upper()}:\n"
+                s_text += f"\t{cr.msg}\n"
+                if len(cr.msg) != len(cr.verbose):
+                    s_text += f"\t{cr.verbose}\n"
+                for location in cr.locations:
+                    if len(cr.locations) == 1:
+                        s_text += f"\t\t{cr.id}:\n"
+                    else:
+                        s_text += f"\t\t{location.info}:\n"
+                    s_text += f"\t\t{location.filename} line:{location.line}, col:{location.column}\n"
+                s_text += f"\t修复结果：\n"
+                s_text += '\n'
+            s_text += '\n\n'
+
+            return s_text
+
+        def kpi_in_text(self):
+            report_secondary_seperator = '''------------------------------------------------------------------------'''
+
+            kpi_text = self.kpi.pack_kpi_report() + '\n'
+            kpi_text += report_secondary_seperator + '\n'
+
+            return kpi_text
+
         def __init__(self):
             self.name_en = ''
             self.name_cn = ''
@@ -28,30 +68,23 @@ class Team:
             self.work_gl_apps = []
             self.work_pro_apps = []
             self.cr_result = []
+            self.kpi = KPIForOnePerson(self.name_en, self.name_cn)
 
-    def save_as_text(self, txt):
+    def save_as_text(self, select, txt):
         summary_in_text = ''
 
         if len(self.members) == 0:
             print('No members found.')
-            return -1
+            return summary_in_text
+
+        if 'kpi' == select:
+            summary_in_text += kpi_head_text()
 
         for mb in self.members:
-            summary_in_text += f"{mb.name_cn}({mb.name_en}):\n"
-            for cr in mb.cr_result:
-                summary_in_text += f"\t{cr.severity.upper()}:\n"
-                summary_in_text += f"\t{cr.msg}\n"
-                if len(cr.msg) != len(cr.verbose):
-                    summary_in_text += f"\t{cr.verbose}\n"
-                for location in cr.locations:
-                    if len(cr.locations) == 1:
-                        summary_in_text += f"\t\t{cr.id}:\n"
-                    else:
-                        summary_in_text += f"\t\t{location.info}:\n"
-                    summary_in_text += f"\t\t{location.filename} line:{location.line}, col:{location.column}\n"
-                summary_in_text += f"\t修复结果：\n"
-                summary_in_text += '\n'
-            summary_in_text += '\n\n'
+            if 'cr_result' == select:
+                summary_in_text += mb.cr_result_in_text()
+            if 'kpi' == select:
+                summary_in_text += mb.kpi_in_text()
 
         with open(txt, 'w', encoding='utf-8') as f:
             f.write(summary_in_text)
@@ -64,6 +97,7 @@ class Team:
                     m.name_en = subNode.getAttribute('name_en')
                     m.name_cn = subNode.getAttribute('name_cn')
                     parse_work(m, subNode)
+                    m.kpi = KPIForOnePerson(m.name_en, m.name_cn)
                     self.members.append(m)
 
     def print_members(self):

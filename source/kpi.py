@@ -2,9 +2,6 @@ import os
 import csv
 import locale
 
-report_head = '''任务量等级： 5:非常饱满， 4:饱满，3：适中，2：不足，1：严重不足'''
-report_main_seperator = '''================================================================================='''
-report_secondary_seperator = '''------------------------------------------------------------------------'''
 report_summary = '''总结：'''
 row_attr_index = {
     "id": 0,
@@ -325,28 +322,6 @@ class KPIForOnePerson:
         # self.report = ""
 
 
-members_in_team = [
-    {"name": "Len Liu", "name_CN": "刘信", "kpi": KPIForOnePerson("Len Liu", "刘信")},
-    {"name": "Claire Liu", "name_CN": "刘慧", "kpi": KPIForOnePerson("Claire Liu", "刘慧")},
-    {"name": "Aleo Liu", "name_CN": "刘洋洋", "kpi": KPIForOnePerson("Aleo Liu", "刘洋洋")},
-    {"name": "Harper Kuang", "name_CN": "匡婷", "kpi": KPIForOnePerson("Harper Kuang", "匡婷")},
-    {"name": "Rain Wu", "name_CN": "吴瑞", "kpi": KPIForOnePerson("Rain Wu", "吴瑞")},
-    {"name": "Vincent Cui", "name_CN": "崔子晨", "kpi": KPIForOnePerson("Vincent Cui", "崔子晨")},
-    {"name": "Bennett Cui", "name_CN": "崔斌", "kpi": KPIForOnePerson("Bennett Cui", "崔斌")},
-    {"name": "Haze Zhang", "name_CN": "张仲俊", "kpi": KPIForOnePerson("Haze Zhang", "张仲俊")},
-    {"name": "Allen Zhang", "name_CN": "张学忠", "kpi": KPIForOnePerson("Allen Zhang", "张学忠")},
-    {"name": "Abert Xu", "name_CN": "徐黎明", "kpi": KPIForOnePerson("Abert Xu", "徐黎明")},
-    {"name": "Bear Cao", "name_CN": "曹政", "kpi": KPIForOnePerson("Bear Cao", "曹政")},
-    {"name": "Archie Li", "name_CN": "李叶齐", "kpi": KPIForOnePerson("Archie Li", "李叶齐")},
-    {"name": "Arthur Lee", "name_CN": "李永乐", "kpi": KPIForOnePerson("Arthur Lee", "李永乐")},
-    {"name": "Walker Wang", "name_CN": "汪自抒", "kpi": KPIForOnePerson("Walker Wang", "汪自抒")},
-    {"name": "Elvin Shen", "name_CN": "沈子扬", "kpi": KPIForOnePerson("Elvin Shen", "沈子扬")},
-    {"name": "Ying Xiong", "name_CN": "熊鹰", "kpi": KPIForOnePerson("Ying Xiong", "熊鹰")},
-    {"name": "Ernie Hu", "name_CN": "胡心月", "kpi": KPIForOnePerson("Ernie Hu", "胡心月")},
-    {"name": "Todd Zheng", "name_CN": "郑功良", "kpi": KPIForOnePerson("Todd Zheng", "郑功良")}
-]
-
-
 # ones
 # ['\ufeffID', '工作项类型', '严重程度', '标题', '状态', '负责人', '截止日期', '预估工时（小时）', '已登记工时（小时）', '剩余工时（小时）', '重新打开-停留次数', '创建者',
 # '创建时间', '所属项目']
@@ -468,16 +443,16 @@ def __get_item_type(row_list):
     return row_list[row_attr_index["work_item_type"]]
 
 
-def row_parser(row_list, first_row):
+def row_parser(row_list, first_row, members):
     name = ""
     if first_row:
         init_row_index(row_list)
     else:
         name = __get_name(row_list)
         print(f"name: {name}")
-        for mb in members_in_team:
-            if mb["name"].lower() == name:
-                mb["kpi"].parse_kpi_row(row_list)
+        for mb in members:
+            if mb.name_en.lower() == name:
+                mb.kpi.parse_kpi_row(row_list)
 
     return name
 
@@ -491,9 +466,9 @@ def row_save(r_path, name, row):
         writer.writerow(row)
 
 
-def kpi_process(r_path, csv_list):
-    for mb in members_in_team:
-        mb["kpi"].reset(r_path, mb["name"])
+def kpi_process(r_path, csv_list, members):
+    for mb in members:
+        mb.kpi.reset(r_path, mb.name_en)
 
     for csv_file in csv_list:
         first_row = True
@@ -503,30 +478,10 @@ def kpi_process(r_path, csv_list):
         with open(fpath, 'r', encoding="utf-8") as csv_f:
             reader = csv.reader(csv_f)
             for r_list in reader:
-                row_name = row_parser(r_list, first_row)
+                row_name = row_parser(r_list, first_row, members)
                 first_row = False
                 row_save(r_path, row_name, r_list)
 
-    for mb in members_in_team:
-        mb["kpi"].kpi_summary()
+    for mb in members:
+        mb.kpi.kpi_summary()
 
-
-def main():
-    path = os.getcwd()
-    root_path = path.replace("source", "kpi_data")
-    print(f"root_path: {root_path}")
-    # root_path = "D:\\myPyFun\\kpi_view\\kpi_data\\"
-    kpi_csv_file_list = ["redmin_0101-0331.csv", "PMS_0101-0331.csv"]
-    kpi_process(root_path, kpi_csv_file_list)
-
-    report_name = "2024Q1-KPI_Report.txt"
-    report = os.path.join(root_path, report_name)
-    with open(report, "w+") as f:
-        f.write(report_head + '\n')
-        f.write(report_main_seperator + '\n')
-        f.write('\n')
-        for mb in members_in_team:
-            f.write(mb["kpi"].pack_kpi_report())
-            f.write('\n')
-            f.write(report_secondary_seperator + '\n')
-            f.write('\n')
