@@ -530,8 +530,3 @@ def main():
             f.write('\n')
             f.write(report_secondary_seperator + '\n')
             f.write('\n')
-
-
-# 外部调用的时候不执行
-if __name__ == '__main__':
-    main()
