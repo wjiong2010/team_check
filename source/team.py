@@ -54,8 +54,21 @@ class Team:
 
         def kpi_in_text(self):
             report_secondary_seperator = '''------------------------------------------------------------------------'''
+            report_summary = '''总结：'''
 
-            kpi_text = self.kpi.pack_kpi_report() + '\n'
+            kpi_text = self.name_cn + "(" + self.name_en + "):" + '\n'
+            kpi_text += self.kpi.fae_bug.get_info() + '\n'
+            kpi_text += self.kpi.prot_dev.get_info() + '\n'
+            kpi_text += self.kpi.requirement.get_info() + '\n'
+            kpi_text += self.kpi.st_bug.get_info() + '\n\n'
+
+            kpi_text += report_summary + '\n'
+            kpi_text += "\tWorkload:" + '\n'
+            kpi_text += self.kpi.fae_bug.summary + '\n'
+            kpi_text += self.kpi.requirement.summary + '\n'
+            kpi_text += self.kpi.st_bug.summary + '\n'
+            kpi_text += self.kpi.prot_dev.summary + '\n\n'
+
             kpi_text += report_secondary_seperator + '\n'
 
             return kpi_text

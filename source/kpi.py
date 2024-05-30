@@ -2,7 +2,6 @@ import os
 import csv
 import locale
 
-report_summary = '''总结：'''
 row_attr_index = {
     "id": 0,
     "work_item_type": 0,
@@ -292,22 +291,6 @@ class KPIForOnePerson:
         self.prot_dev.calcu_summary()
         self.st_bug.calcu_summary()
         self.requirement.calcu_summary()
-
-    def pack_kpi_report(self):
-        report_string = self.name_cn + "(" + self.name_en + "):" + '\n'
-        report_string += self.fae_bug.get_info() + '\n'
-        report_string += self.prot_dev.get_info() + '\n'
-        report_string += self.requirement.get_info() + '\n'
-        report_string += self.st_bug.get_info() + '\n\n'
-
-        report_string += report_summary + '\n'
-        report_string += "    Workload:" + '\n'
-        report_string += self.fae_bug.summary + '\n'
-        report_string += self.requirement.summary + '\n'
-        report_string += self.st_bug.summary + '\n'
-        report_string += self.prot_dev.summary + '\n'
-
-        return report_string
 
     def __init__(self, name_en, name_cn):
         self.name_en = name_en
