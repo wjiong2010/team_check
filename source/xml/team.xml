@@ -2,7 +2,7 @@
 <team version="1.0">
     <application>
         <developer name_en = 'Len Liu' name_cn = '刘信'>
-            <work_app item = "AIS,EPS,EFS,FSC,UFS,JDC,JBS"/>
+            <work_app item = "AIS,EPS,EFS,FSC,UFS,JDC,JBS,IDL"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
@@ -86,7 +86,7 @@
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Elvin Shen' name_cn = '沈子扬'>
-            <work_app item = "CAN,CFU,TTR,CLT,AES,MQT"/>
+            <work_app item = "CAN,CFU,TTR,CLT,AES,MQT,URT"/>
             <work_module item = 'COMM,SERIAL'/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
