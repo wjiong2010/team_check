@@ -78,13 +78,13 @@ class Team:
                         rc_str += '\n'
                     if len(cr.locations) == 1:
                         rc_str += f"{cr.id}:"
-                        lines += 1
                     else:
                         rc_str += f"{location.info}:"
-                        lines += 1
                     rc_str += '\n'
-                    rc_str += f"{location.filename} line:{location.line}, col:{location.column}"
                     lines += 1
+                    l = f"{location.filename} line:{location.line}, col:{location.column}"
+                    rc_str += l
+                    lines += len(l)/Team().COL_B_WIDTH + 1
                 ws[rc] = rc_str
                 xl_format.set_cell(ws[rc])
                 xl_format.set_row(ws, r, 15*lines + 10)
