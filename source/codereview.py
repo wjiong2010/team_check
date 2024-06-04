@@ -2,8 +2,6 @@ import os
 import xml.dom.minidom
 from xml.dom import DOMException
 from team import CR_ELEMENT_NODE
-import xlwt
-import xlrd
 
 
 class ResultLocation:

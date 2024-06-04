@@ -1,8 +1,11 @@
 import xml.dom.minidom
 from xml.dom import DOMException
 from kpi import KPIForOnePerson
+from openpyxl import Workbook
+from excel_format import ExcelFormat
 
 CR_ELEMENT_NODE = 1
+xl_format = ExcelFormat()
 
 
 def parse_work(m, node):
@@ -32,6 +35,71 @@ def kpi_head_text():
 
 class Team:
     class Member:
+        def cr_result_in_excel(self, ws, r):
+            print(f"{str(r)} next line----------------------------")
+            ori_r = r
+            rc = f"A{r}"
+            print(f"{rc}")
+            ws[rc] = f"{self.name_cn}({self.name_en})".title()
+            mg_rc = f"A{r}:B{r}"
+            ws.merge_cells(mg_rc)
+            xl_format.set_cell(ws[rc], font=xl_format.cell_title_font)
+            rc = f"B{r}"
+            xl_format.set_cell(ws[rc], font=xl_format.cell_title_font)
+
+            for cr in self.cr_result:
+                r += 1
+                r0 = r
+                rc = f"A{r}"
+                ws[rc] = cr.severity.upper()
+                print(f"{rc}, {cr.severity.upper()}")
+                xl_format.set_cell(ws[rc])
+
+                rc = f"B{r}"
+                lines = 0
+                rc_str = f"{cr.msg}"
+                lines += 1
+                if len(cr.msg) != len(cr.verbose):
+                    rc_str += '\n'
+                    rc_str += f"{cr.verbose}"
+                    lines += len(cr.verbose)/Team().COL_B_WIDTH + 1
+                    print("lines: " + str(lines))
+                ws[rc] = rc_str
+                xl_format.set_cell(ws[rc])
+                xl_format.set_row(ws, r, 15*lines + 10)
+                print(f"{rc}, {rc_str}, {cr.verbose}")
+
+                r += 1
+                rc = f"B{r}"
+                rc_str = ''
+                lines = 0
+                for location in cr.locations:
+                    if lines > 0:
+                        rc_str += '\n'
+                    if len(cr.locations) == 1:
+                        rc_str += f"{cr.id}:"
+                        lines += 1
+                    else:
+                        rc_str += f"{location.info}:"
+                        lines += 1
+                    rc_str += '\n'
+                    rc_str += f"{location.filename} line:{location.line}, col:{location.column}"
+                    lines += 1
+                ws[rc] = rc_str
+                xl_format.set_cell(ws[rc])
+                xl_format.set_row(ws, r, 15*lines + 10)
+                print(f"{rc}, {ws[rc]}")
+
+                r += 1
+                rc = f"B{r}"
+                ws[rc] = f"修复结果："
+                xl_format.set_cell(ws[rc])
+
+                mg_rc = f"A{r0}:A{r}"
+                ws.merge_cells(mg_rc)
+
+            return r - ori_r
+
         def cr_result_in_text(self):
             s_text = ''
             s_text += f"{self.name_cn}({self.name_en}):\n"
@@ -83,6 +151,36 @@ class Team:
             self.work_pro_apps = []
             self.cr_result = []
             self.kpi = KPIForOnePerson(self.name_en, self.name_cn)
+
+    def save_as_excel(self, select, excel):
+        app_r = 1
+        sys_r = 1
+
+        if len(self.members) == 0:
+            print('No members found.')
+            return ''
+
+        wb = Workbook()
+        ws_app = wb.active
+        ws_app.title = "Application"
+        ws_sys = wb.create_sheet("System")
+
+        for mb in self.members:
+            if 'cr_result' == select:
+                if mb.group == 'application':
+                    app_r += mb.cr_result_in_excel(ws_app, app_r)
+                    app_r += 1
+                if mb.group == 'system':
+                    sys_r += mb.cr_result_in_excel(ws_sys, sys_r)
+                    sys_r += 1
+
+        xl_format.set_column(ws_app, 'A', self.COL_A_WIDTH)
+        xl_format.set_column(ws_app, 'B', self.COL_B_WIDTH)
+        xl_format.set_column(ws_sys, 'A', self.COL_A_WIDTH)
+        xl_format.set_column(ws_sys, 'B', self.COL_B_WIDTH)
+
+        # Save the file
+        wb.save(excel)
 
     def save_as_text(self, select, txt):
         summary_in_text = ''
@@ -147,4 +245,6 @@ class Team:
                     self.parse_developer(node)
 
     def __init__(self):
+        self.COL_A_WIDTH = 20
+        self.COL_B_WIDTH = 120
         self.members = []
