@@ -1,86 +1,88 @@
 """
 File Name: excel_format.py
-Author: 小蜗牛慢慢爬
-Date: 20190818
-Description: excel单元格的格式
+Author: John.Wang
+Date: 20240604
+Description: Excel cell format
 """
+from openpyxl.styles import Font, Border, Side, Alignment, PatternFill
 
-from xlwt import Alignment
-from xlwt import Borders
-from xlwt import Font
-from xlwt import Pattern
-from xlwt import XFStyle
+# from openpyxl.utils import get_column_letter, column_index_from_string
 
-"""设置标题的格式类型"""
-# 居中设置: 水平居中， 上下居中
-alig = Alignment()
-alig.horz = Alignment.HORZ_CENTER
-alig.vert = Alignment.VERT_CENTER
 
-# 边界设置: 边框颜色黑色， 宽度为1
-bd = Borders()
-bd.top = 1
-bd.bottom = 1
-bd.left = 1
-bd.right = 1
-bd.diag_colour = 0x0
+"""
+    白色：FFFFFF，黑色：000000，红色：FF0000，黄色：FFFF00
+    绿色：00FF00，蓝色：0000FF，橙色：FF9900，灰色：C0C0C0
+    常见颜色代码表：https://www.osgeo.cn/openpyxl/styles.html#indexed-colours
+"""
+COLOR_WHITE = 'FFFFFF'
+COLOR_BLACK = '000000'
+COLOR_RED = 'FF0000'
+COLOR_GREEN = '00FF00'
+COLOR_BLUE = '0000FF'
+COLOR_YELLOW = 'FFFF00'
+COLOR_GRAY = 'C0C0C0'
+COLOR_ORANGE = 'FF9900'
 
-# 单元格底色， 绿色
-pt = Pattern()
-pt.pattern = Pattern.SOLID_PATTERN
-'''
-pattern.pattern_fore_colour = 5 # May be: 8 through 63.
-0 = Black, 1 = White, 2 = Red, 3 = Green, 4 = Blue,
-5 = Yellow, 6 = Magenta, 7 = Cyan, 16 = Maroon, 17 = Dark Green,
-18 = Dark Blue, 19 = Dark Yellow , almost brown), 20 = Dark Magenta,
-21 = Teal, 22 = Light Gray, 23 = Dark Gray, the list goes on...
-'''
-# pt.pattern_back_colour = 0xff
-pt.pattern_fore_colour = 3
 
-# 字体，宋体加粗
-fn = Font()
-fn.bold = True
-fn.name = u'宋体'
-fn.height = 210
+class ExcelFormat:
+    def __init__(self):
+        """设置单元格文字样式"""
+        self.cell_content_font = Font(bold=False,  # 加粗
+                                      italic=False,  # 倾斜
+                                      name="Calibri",  # 字体
+                                      size=13,  # 文字大小
+                                      color=COLOR_BLACK,  # 字体颜色为黑
+                                      # underline='single'  # 下划线
+                                      )
 
-# title format
-title_format = XFStyle()
-title_format.pattern = pt
-title_format.alignment = alig
-title_format.borders = bd
-title_format.font = fn
+        self.cell_title_font = Font(bold=True,  # 加粗
+                                    italic=False,  # 倾斜
+                                    name="Calibri",  # 字体
+                                    size=13,  # 文字大小
+                                    color=COLOR_BLACK,  # 字体颜色为黑
+                                    # underline='single'  # 下划线
+                                    )
 
-"""设置文本的格式类型"""
-# 居中设置: 水平左对齐， 上下居中
-alig = Alignment()
-alig.horz = Alignment.HORZ_LEFT
-alig.vert = Alignment.VERT_CENTER
-alig.wrap = 1  # 自动换行
+        """设置单元格边框为黑色边框"""
+        self.cell_border = Border(bottom=Side(style='thin', color='000000'),
+                                  right=Side(style='thin', color='000000'),
+                                  left=Side(style='thin', color='000000'),
+                                  top=Side(style='thin', color='000000'))
 
-# 边界设置: 边框颜色黑色， 宽度为1
-bd = Borders()
-bd.top = 1
-bd.bottom = 1
-bd.left = 1
-bd.right = 1
-bd.diag_colour = 0x0  # 黑色
+        """设置单元格对齐方式为水平居中和垂直居中，单元格内容超出范围自动换行"""
+        self.cell_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
-# 单元格底色，白色
-pt = Pattern()
-pt.pattern = Pattern.SOLID_PATTERN
-# pt.pattern_back_colour = 0xff
-pt.pattern_fore_colour = 1
+        """设置单元格底纹颜色"""
+        self.cell_fill = PatternFill(fill_type='solid', start_color=COLOR_WHITE)
 
-# 字体，宋体不加粗，大小210
-fn = Font()
-fn.bold = False
-fn.name = u'宋体'
-fn.height = 210
+        self.row_height = 20
+        self.column_height = 15
 
-# text_format
-text_format = XFStyle()
-text_format.pattern = pt
-text_format.alignment = alig
-text_format.borders = bd
-text_format.font = fn
+    """row"""
+
+    def set_row(self, ws, row, height=0):
+        row = ws.row_dimensions[row]
+        # 设置行高
+        if row == 0:
+            row.height = self.row_height
+        else:
+            row.height = height
+
+    """column"""
+
+    def set_column(self, ws, column, width=0):
+        column = ws.column_dimensions[column]
+        # column = ws.column_dimensions[get_column_letter(1)]  # 根据数字列标获取第一列列对象
+        if width == 0:
+            column.width = self.column_height  # 设置列宽
+        else:
+            column.width = width
+
+    def set_cell(self, cell, font=None, align=None, border=None):
+        if font is None:
+            cell.font = self.cell_content_font
+        else:
+            cell.font = font
+        cell.border = self.cell_border
+        cell.alignment = self.cell_alignment
+        cell.fill = self.cell_fill
