@@ -20,7 +20,7 @@
             <work_pro_app item = 'BLECAN,CAN,CFU,LED'/>
         </developer>
         <developer name_en = 'Harper Kuang' name_cn = '匡婷'>
-            <work_app item = "FFC,FRI,EMG,CRA,ASC,HBM,RAS,RCS,GNA"/>
+            <work_app item = "SIM,SPD,TOW,OWH,PIN,TMA,WLT"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = 'BLEPIN,RELAY'/>
@@ -32,7 +32,7 @@
             <work_pro_app item = 'DOG,GTC,OSPD,SSR,TOF,TOW'/>
         </developer>
         <developer name_en = 'Vincent Cui' name_cn = '崔子晨'>
-            <work_app item = "IDA,CDA,GEO,PEO,PEG,GAM,FKS,NMD"/>
+            <work_app item = "IDA,IDS,IDC,CDA,GEO,PEO,PEG,GAM"/>
             <work_module item = ''/>
             <work_gl_app item = 'CFG,NMD,DOG,TMA,SFM,FKS,EMS,RDF'/>
             <work_pro_app item = ''/>
@@ -104,7 +104,7 @@
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Todd Zheng' name_cn = '郑功良'>
-            <work_app item = "DMS,DOG,FTP,FSC,FSI,FSS,PMS"/>
+            <work_app item = "DMS,DOG,FTP,FSC,FSI,FSS,PMS,IGM"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
