@@ -1,6 +1,5 @@
 import os
 import csv
-import locale
 
 row_attr_index = {
     "id": 0,
@@ -467,4 +466,3 @@ def kpi_process(r_path, csv_list, members):
 
     for mb in members:
         mb.kpi.kpi_summary()
-
