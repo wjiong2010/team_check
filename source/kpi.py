@@ -452,6 +452,12 @@ def kpi_process(r_path, csv_list, members):
     for mb in members:
         mb.kpi.reset(r_path, mb.name_en)
 
+    sep_kpi_fold = csv_list[0]
+    sep_kpi_fold = sep_kpi_fold[sep_kpi_fold.find("_") + 1:sep_kpi_fold.rfind(".")]
+    sep_kpi_fold = os.path.join(r_path, sep_kpi_fold)
+    if not os.path.exists(sep_kpi_fold):
+        os.makedirs(sep_kpi_fold)
+
     for csv_file in csv_list:
         first_row = True
         fpath = os.path.join(r_path, csv_file)
@@ -462,7 +468,7 @@ def kpi_process(r_path, csv_list, members):
             for r_list in reader:
                 row_name = row_parser(r_list, first_row, members)
                 first_row = False
-                row_save(r_path, row_name, r_list)
+                row_save(sep_kpi_fold, row_name, r_list)
 
     for mb in members:
         mb.kpi.kpi_summary()
