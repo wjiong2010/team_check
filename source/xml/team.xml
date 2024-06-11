@@ -62,7 +62,7 @@
             <work_pro_app item = 'ACK,AGPS,AOL,APF,APN,APN2,BPL,BSS,BSS2,BTADV,BTBCN,BTKFB,BTSVR,CFG,CMD,DMS,EPS,GAM,GEO,GMC,GML,GMS,GSENSOR,HBD,NET,OWH,PIN,PPS,PROFILE,PWL,QRC,QSS,RDF,RPS,SMS,TMA,UDF'/>
         </developer>
         <developer name_en = 'Bear Cao' name_cn = '曹政'>
-            <work_app item = "HMC,HRM,CDS,MSI,MSF"/>
+            <work_app item = "HMC,HRM,CDS,MSI,MSF,WRT"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
