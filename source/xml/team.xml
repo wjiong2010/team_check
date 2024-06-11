@@ -141,5 +141,11 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
+        <developer name_en = 'Riven Wu' name_cn = '吴磊'>
+            <work_app item = ""/>
+            <work_module item = ''/>
+            <work_gl_app item = ''/>
+            <work_pro_app item = ''/>
+        </developer>
     </system>
 </team>
