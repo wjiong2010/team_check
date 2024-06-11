@@ -468,7 +468,8 @@ def kpi_process(r_path, csv_list, members):
             for r_list in reader:
                 row_name = row_parser(r_list, first_row, members)
                 first_row = False
-                row_save(sep_kpi_fold, row_name, r_list)
+                if '' != row_name:
+                    row_save(sep_kpi_fold, row_name, r_list)
 
     for mb in members:
         mb.kpi.kpi_summary()
