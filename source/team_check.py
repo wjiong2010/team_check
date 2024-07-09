@@ -8,8 +8,10 @@ software_develop_team = Team()
 
 
 def main():
+    season = 'Q2'
     path = os.getcwd()
     root_path = path.replace("source", "raw_data")
+    root_path = os.path.join(root_path, season)
     print(f"root_path: {root_path}")
 
     software_develop_team.init_members()
@@ -21,9 +23,10 @@ def main():
     software_develop_team.save_as_excel("cr_result", "Code_Review.xlsx")
 
     print("KPI processing start")
-    kpi_csv_file_list = ["redmin_0401-0605.csv", "PMS_0401-0605.csv"]
+    kpi_csv_file_list = ["redmin_0401-0630.csv", "PMS_0401-0630.csv"]
     kpi_process(root_path, kpi_csv_file_list, software_develop_team.members)
-    software_develop_team.save_as_text("kpi", "2024Q2-KPI_Report.txt")
+    output_file = os.path.join(root_path, "2024Q2-KPI_Report.txt")
+    software_develop_team.save_as_text("kpi", output_file)
     print("KPI processing end")
 
 
