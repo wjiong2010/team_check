@@ -1,5 +1,6 @@
 import os
 import csv
+from datetime import datetime
 
 row_attr_index = {
     "id": 0,
@@ -9,6 +10,8 @@ row_attr_index = {
     "status": 0,
     "person_in_charge": 0,
     "dead_line": 0,
+    "complete_time": 0,
+    "bug_finish_time": 0,
     "estimated_man_hours": 0,
     "registered_man_hours": 0,
     "rest_man_hours": 0,
@@ -19,11 +22,80 @@ row_attr_index = {
 }
 
 
+def date_diff_days(start_date, end_date):
+    date_format = "%Y-%m-%d"
+    start_date = datetime.strptime(start_date, date_format)
+    end_date = datetime.strptime(end_date, date_format)
+
+    # 计算相差天数
+    delta = end_date - start_date
+    return delta.days
+
+
+def minutes_to_dhm(minutes):
+    """
+    :param minutes:
+    :return: 2 天18 小时1 分钟
+            3 小时44 分钟
+            2 分钟
+            6 天27 分钟
+    """
+    ret_str = ""
+    days = int(minutes // 1440)
+    if days != 0:
+        ret_str += "{} 天".format(days)
+    hours = int(minutes % 1440)
+    hours = int(hours // 60)
+    if hours != 0:
+        ret_str += " {} 小时".format(hours)
+    minutes = int(minutes % 60)
+    if minutes != 0:
+        ret_str += " {}".format(minutes)
+
+    return ret_str
+
+
+def dhm_to_minutes(dhm):
+    """
+    :param dhm: 2 天18 小时1 分钟
+                3 小时44 分钟
+                2 分钟
+                6 天27 分钟
+    :return: time in minutes
+    """
+    days = 0
+    hours = 0
+    minutes = 0
+    d = dhm.find("天")
+    if d != -1:
+        days = dhm[:d].strip()
+        print(f"days: {days}")
+    h = dhm.find("小时")
+    if h != -1:
+        if d == -1:
+            hours = dhm[:h].strip()
+        else:
+            hours = dhm[d + 1:h].strip()
+        print(f"hours: {hours}")
+    m = dhm.find("分钟")
+    if m != -1:
+        if h == -1 and d == -1:
+            minutes = dhm[:m].strip()
+        elif h == -1 and d != 1:
+            minutes = dhm[d + 1:m].strip()
+        else:
+            minutes = dhm[h + 2:m].strip()
+        print(f"minutes: {minutes}")
+
+    return int(days) * 1440 + int(hours) * 60 + int(minutes)
+
+
 class KPIItem:
     def __init__(self):
         self.name_list = []
         self.status_counter = {}
         self.total = 0
+        self.total_complete = 0
 
     def reset(self):
         # self.name_list.clear()
@@ -73,6 +145,8 @@ class KPIItem:
             c = 0
             for r in rt_list:
                 c += d[r]
+
+        self.total_complete = c
 
         ratio = "{:.1f}".format(float(c / self.total) * 100.0)
         return " " * 4 + pre + str(ratio) + "%"
@@ -154,16 +228,60 @@ class itemREQUIREMENT(KPIItem):
         self.summary = " " * 4 + self.fix_pre + "null\n"
         self.summary += " " * 4 + self.reopen_pre + "null"
         self.reopen_times = 0
+        self.diff_days = 0
+        self.in_time = 0
+        self.out_time = 0
 
-    def do_proc_req(self, id_v, st, ty, rop_t):
+    def do_proc_req(self, id_v, st, ty, row_list):
         super().do_proc(id_v, st, ty)
+        if row_attr_index["reopen_times"] == 0:
+            rop_t = ""
+        else:
+            rop_t = row_list[row_attr_index["reopen_times"]]
+        print(f"requirement rop_t: {rop_t}")
         if len(rop_t) != 0:
             self.reopen_times += int(rop_t)
+
+        # complete in time
+        if row_attr_index["complete_time"] == 0:
+            cmp_t = ""
+        else:
+            cmp_t = row_list[row_attr_index["complete_time"]]
+            if cmp_t != "":
+                l = cmp_t.split()
+                print(f"complete time: {l}, {cmp_t}")
+                cmp_t = "".join(l[0])
+        print(f"requirement cmp_t: {cmp_t}")
+
+        # deadline
+        if row_attr_index["dead_line"] == 0:
+            dd_line = ""
+        else:
+            dd_line = row_list[row_attr_index["dead_line"]]
+        print(f"requirement dd_line: {dd_line}")
+
+        # diff_days = deadline - complete_time, <=0 out time. >0: in time
+        if len(dd_line) != 0 and len(cmp_t) != 0:
+            self.diff_days = date_diff_days(cmp_t, dd_line)
+            if self.diff_days <= 0:
+                self.out_time += 1
+            else:
+                self.in_time += 1
 
     def calcu_summary(self):
         rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "关闭", "WAIT_FEEDBACK", "NO_RESPONSE"]
         self.summary = super().rate_calculater(rt_list, self.fix_pre) + "\n"
+        print(f"requirement total complete: {self.total_complete}/{self.total}")
 
+        # COMPLETE IN TIME
+        # rate of complete in time = in_time/total_complete x 100%
+        if self.in_time == 0:
+            self.summary += "    REQUIREMENT complete in time: 0"
+        else:
+            rate = "{:.1f}".format(float(self.in_time / self.total_complete) * 100.0)
+            self.summary += "    REQUIREMENT complete in time({}/{}): ".format(self.in_time, self.total_complete) + str(
+                rate) + "%"
+        self.summary += "\n"
         # "REOPEN"
         # reopen率 = 总reopen次数/REQUIREMENT总数 x 100%
         self.summary += super().rate_calculater([], self.reopen_pre, self.reopen_times) + "\n"
@@ -221,19 +339,61 @@ class itemST_BUG(KPIItem):
         self.reopen_pre = "ST_BUG Reopened: "
         self.summary = " " * 4 + self.fix_pre + "null\n"
         self.summary += " " * 4 + self.reopen_pre + "null"
+        self.fixed = {"Critical": 0, "Major": 0, "Normal": 0}
+        self.reopened = {"Critical": 0, "Major": 0, "Normal": 0}
+        self.finish_time = {"Critical": 0, "Major": 0, "Normal": 0}
+        self.diff_total = {"Critical": 0, "Major": 0, "Normal": 0}
 
-    def do_proc_req(self, id_v, st, ty, rop_t):
+    def do_proc_req(self, id_v, st, ty, row_list):
         super().do_proc(id_v, st, ty)
+        # severity
+        if row_attr_index["severity"] == 0:
+            severity = ""
+        else:
+            severity = row_list[row_attr_index["severity"]]
+            print(f"st_bug severity: {severity}, value:{self.diff_total[severity]}")
+            self.diff_total[severity] += 1
+
+        # diff days
+        bug_ft_mins = 0
+        if row_attr_index["bug_finish_time"] != 0:
+            bug_ft = row_list[row_attr_index["bug_finish_time"]]
+
+            if bug_ft != "":
+                bug_ft_mins = dhm_to_minutes(bug_ft)
+                print(f"st_bug bug_ft: {bug_ft}")
+
+        print(f"st_bug bug_finish_time: {bug_ft_mins}")
+        self.finish_time[severity] += bug_ft_mins
+
+        if row_attr_index["reopen_times"] == 0:
+            rop_t = ""
+        else:
+            rop_t = row_list[row_attr_index["reopen_times"]]
+        print(f"st_bug rop_t: {rop_t}")
         if len(rop_t) != 0:
             self.reopen_times += int(rop_t)
+            self.reopened[severity] += int(rop_t)
 
     def calcu_summary(self):
         rt_list = ["拒绝", "RESOLVED-已修复", "CLOSED-关闭", "验证中"]
         self.summary = super().rate_calculater(rt_list, self.fix_pre) + '\n'
 
-        # "REOPENED-重新打开"
-        # reopen率 = 总reopen次数/ST_BUG总数 x 100%
-        self.summary += super().rate_calculater([], self.reopen_pre, self.reopen_times)
+        severity_list = ["Critical", "Major", "Normal"]
+        avg_finish_time = ""
+        reopened_time = ""
+        for severity in severity_list:
+            if self.diff_total[severity] == 0:
+                continue
+            avg = int(self.finish_time[severity] / self.diff_total[severity])
+
+            pre_fix = " " * 4 + severity.title() + " ST_BUG Average Finish Time:"
+            avg_finish_time += pre_fix + " {} \n".format(minutes_to_dhm(avg))
+            pre_fix = " " * 4 + severity.title() + " ST_BUG Reopened Time"
+            reopened_time = pre_fix + "({}/{}) = {:.1f}%\n".format(self.reopened[severity], self.diff_total[severity],
+                                                                   self.reopened[severity] / self.diff_total[severity])
+        self.summary += avg_finish_time
+        self.summary += reopened_time
 
 
 def get_csv_filename(r, fn):
@@ -269,19 +429,9 @@ class KPIForOnePerson:
         elif work_type in self.prot_dev.name_list:
             self.prot_dev.do_proc(id_v, st, work_type)
         elif work_type in self.st_bug.name_list:
-            if row_attr_index["reopen_times"] == 0:
-                rop_t = ""
-            else:
-                rop_t = kpi_row[row_attr_index["reopen_times"]]
-            print(f"st_bug rop_t: {rop_t}")
-            self.st_bug.do_proc_req(id_v, st, work_type, rop_t)
+            self.st_bug.do_proc_req(id_v, st, work_type, kpi_row)
         elif work_type in self.requirement.name_list:
-            if row_attr_index["reopen_times"] == 0:
-                rop_t = ""
-            else:
-                rop_t = kpi_row[row_attr_index["reopen_times"]]
-            print(f"requirement rop_t: {rop_t}")
-            self.requirement.do_proc_req(id_v, st, work_type, rop_t)
+            self.requirement.do_proc_req(id_v, st, work_type, kpi_row)
         else:
             raise Exception(f"unknown work type: {work_type}")
 
@@ -354,6 +504,20 @@ def init_row_index(row):
         row_attr_index["dead_line"] = row.index("计划完成日期")
     r = row_attr_index["dead_line"]
     print(f"dead_line: {r}")
+
+    try:
+        row_attr_index["complete_time"] = row.index("实际完成时间")
+    except ValueError:
+        print("complete_time error!!")
+    r = row_attr_index["complete_time"]
+    print(f"complete_time: {r}")
+
+    try:
+        row_attr_index["bug_finish_time"] = row.index("缺陷修复周期")
+    except ValueError:
+        print("bug_finish_time error!!")
+    r = row_attr_index["bug_finish_time"]
+    print(f"bug_finish_time: {r}")
 
     try:
         row_attr_index["estimated_man_hours"] = row.index("预估工时（小时）")

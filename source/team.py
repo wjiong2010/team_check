@@ -195,7 +195,8 @@ class Team:
         for mb in self.members:
             if 'cr_result' == select:
                 summary_in_text += mb.cr_result_in_text()
-            if 'kpi' == select and mb.group == 'application':
+            # if 'kpi' == select and mb.group == 'application':
+            if 'kpi' == select:
                 summary_in_text += mb.kpi_in_text()
 
         with open(txt, 'w', encoding='utf-8') as f:
