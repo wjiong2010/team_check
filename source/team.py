@@ -236,7 +236,7 @@ class Team:
         if root.nodeName != 'team':
             raise Exception('XML has no \'Team\' element.')
 
-        # Get attributes of results
+        # Get attributes of results xx
         results_ver = root.getAttribute('version')
         print(results_ver)
 
