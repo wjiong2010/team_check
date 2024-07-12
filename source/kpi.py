@@ -50,7 +50,7 @@ def minutes_to_dhm(minutes):
         ret_str += " {} 小时".format(hours)
     minutes = int(minutes % 60)
     if minutes != 0:
-        ret_str += " {}".format(minutes)
+        ret_str += " {} 分钟".format(minutes)
 
     return ret_str
 
