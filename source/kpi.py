@@ -339,6 +339,7 @@ class itemST_BUG(KPIItem):
         self.reopen_pre = "ST_BUG Reopened: "
         self.summary = " " * 4 + self.fix_pre + "null\n"
         self.summary += " " * 4 + self.reopen_pre + "null"
+        self.redmin_bug = {"Critical": 0, "Major": 0, "Normal": 0}
         self.fixed = {"Critical": 0, "Major": 0, "Normal": 0}
         self.reopened = {"Critical": 0, "Major": 0, "Normal": 0}
         self.finish_time = {"Critical": 0, "Major": 0, "Normal": 0}
@@ -356,12 +357,16 @@ class itemST_BUG(KPIItem):
 
         # diff days
         bug_ft_mins = 0
-        if row_attr_index["bug_finish_time"] != 0:
-            bug_ft = row_list[row_attr_index["bug_finish_time"]]
+        r = row_attr_index["bug_finish_time"]
+        print(f"st_bug bug_finish_time: {r}/{len(row_list)}")
+        if r != 0:
+            bug_ft = row_list[r]
 
             if bug_ft != "":
                 bug_ft_mins = dhm_to_minutes(bug_ft)
                 print(f"st_bug bug_ft: {bug_ft}")
+        else:
+            self.redmin_bug[severity] += 1
 
         print(f"st_bug bug_finish_time: {bug_ft_mins}")
         self.finish_time[severity] += bug_ft_mins
@@ -385,7 +390,8 @@ class itemST_BUG(KPIItem):
         for severity in severity_list:
             if self.diff_total[severity] == 0:
                 continue
-            avg = int(self.finish_time[severity] / self.diff_total[severity])
+            total = self.diff_total[severity] - self.redmin_bug[severity]
+            avg = int(self.finish_time[severity] / total)
 
             pre_fix = " " * 4 + severity.title() + " ST_BUG Average Finish Time:"
             avg_finish_time += pre_fix + " {} \n".format(minutes_to_dhm(avg))
@@ -509,6 +515,7 @@ def init_row_index(row):
         row_attr_index["complete_time"] = row.index("实际完成时间")
     except ValueError:
         print("complete_time error!!")
+        row_attr_index["complete_time"] = row.index("结束日期")
     r = row_attr_index["complete_time"]
     print(f"complete_time: {r}")
 
@@ -516,6 +523,7 @@ def init_row_index(row):
         row_attr_index["bug_finish_time"] = row.index("缺陷修复周期")
     except ValueError:
         print("bug_finish_time error!!")
+        row_attr_index["bug_finish_time"] = 0
     r = row_attr_index["bug_finish_time"]
     print(f"bug_finish_time: {r}")
 
@@ -607,7 +615,7 @@ def row_save(r_path, name, row):
     p = get_csv_filename(r_path, name)
     print(f"saving {p}")
     print(f"row: {row}")
-    with open(p, 'a', encoding="utf-8") as csv_f:
+    with open(p, 'a', encoding="utf-8-sig") as csv_f:
         writer = csv.writer(csv_f, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
         writer.writerow(row)
 
