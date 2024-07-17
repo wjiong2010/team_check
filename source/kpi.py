@@ -134,6 +134,18 @@ class KPIItem:
                 self.status_counter[k] += 1
                 break
 
+    def get_status_count(self, st):
+        c = 0
+        keys_list = list(self.status_counter.keys())
+        for k in keys_list:
+            print(f"checking {st} in {k}")
+            if -1 != k.find(st):
+                print(f"{st} in {k}")
+                c = self.status_counter[k]
+                break
+
+        return c
+
     def rate_calculater(self, rt_list, pre, count=0):
         if self.total == 0:
             return " " * 4 + pre + " null"
@@ -278,9 +290,8 @@ class itemREQUIREMENT(KPIItem):
         if self.in_time == 0:
             self.summary += "    REQUIREMENT complete in time: 0"
         else:
-            rate = "{:.1f}".format(float(self.in_time / self.total_complete) * 100.0)
-            self.summary += "    REQUIREMENT complete in time({}/{}): ".format(self.in_time, self.total_complete) + str(
-                rate) + "%"
+            rate = "{:.1f}%".format(float(self.in_time / self.total_complete) * 100.0)
+            self.summary += "    REQUIREMENT complete in time({}/{}): {}".format(self.in_time, self.total_complete, rate)
         self.summary += "\n"
         # "REOPEN"
         # reopen率 = 总reopen次数/REQUIREMENT总数 x 100%
@@ -371,14 +382,16 @@ class itemST_BUG(KPIItem):
         print(f"st_bug bug_finish_time: {bug_ft_mins}")
         self.finish_time[severity] += bug_ft_mins
 
-        if row_attr_index["reopen_times"] == 0:
-            rop_t = ""
-        else:
+        if row_attr_index["reopen_times"] != 0:
             rop_t = row_list[row_attr_index["reopen_times"]]
-        print(f"st_bug rop_t: {rop_t}")
-        if len(rop_t) != 0:
-            self.reopen_times += int(rop_t)
-            self.reopened[severity] += int(rop_t)
+            print(f"st_bug rop_t: {rop_t}")
+            if len(rop_t) != 0:
+                self.reopen_times += int(rop_t)
+                self.reopened[severity] += int(rop_t)
+
+        if st == 'REOPENED':
+            self.reopen_times += 1
+            self.reopened[severity] += 1
 
     def calcu_summary(self):
         rt_list = ["拒绝", "RESOLVED-已修复", "CLOSED-关闭", "验证中"]
@@ -395,9 +408,10 @@ class itemST_BUG(KPIItem):
 
             pre_fix = " " * 4 + severity.title() + " ST_BUG Average Finish Time:"
             avg_finish_time += pre_fix + " {} \n".format(minutes_to_dhm(avg))
-            pre_fix = " " * 4 + severity.title() + " ST_BUG Reopened Time"
-            reopened_time = pre_fix + "({}/{}) = {:.1f}%\n".format(self.reopened[severity], self.diff_total[severity],
-                                                                   self.reopened[severity] / self.diff_total[severity])
+            pre_fix = " " * 4 + severity.title() + " ST_BUG Reopened "
+            reopened_time += pre_fix + "({}/{}) = {:.1f}%\n".format(self.reopened[severity], self.diff_total[severity],
+                                                                     (self.reopened[severity] / self.diff_total[severity]) * 100)
+
         self.summary += avg_finish_time
         self.summary += reopened_time
 
@@ -568,10 +582,10 @@ def init_row_index(row):
     print(f"project: {r}")
 
     try:
-        row_attr_index["reopen_times"] = row.index("重新打开-停留次数")
+        row_attr_index["reopen_times"] = row.index("REOPEN-停留次数")
     except ValueError:
         print("error!!")
-        # row_attr_index["project"] = row.index("项目")
+        row_attr_index["reopen_times"] = 0
     r = row_attr_index["reopen_times"]
     print(f"reopen_times: {r}")
 
