@@ -1,5 +1,4 @@
 import os
-from codereview import cr_parse_result
 from kpi import kpi_process
 from team import Team
 
@@ -26,9 +25,9 @@ def main():
 
     print("KPI processing start")
     kpi_path = os.path.join(root_path, season)
-    kpi_csv_file_list = ["PMS_0101-0630.csv"]
+    kpi_csv_file_list = ["PMS_0401-0630.csv", "redmin_0401-0630.csv"]
     kpi_process(kpi_path, kpi_csv_file_list, software_develop_team.members)
-    output_file = os.path.join(kpi_path, "2024Q2-REQ-BUG_Report.txt")
+    output_file = os.path.join(kpi_path, "2024Q2-KPI_Report.txt")
     software_develop_team.save_as_text("kpi", output_file)
     print("KPI processing end")
 
