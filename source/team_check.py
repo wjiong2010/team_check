@@ -1,6 +1,7 @@
 import os
 from kpi import kpi_process
 from team import Team
+from codereview import cr_parse_result
 
 
 software_develop_team = Team()
@@ -8,7 +9,7 @@ software_develop_team = Team()
 
 def main():
     season = 'Q2'
-    cr_week = '0715'
+    cr_week = '0722'
     path = os.getcwd()
     root_path = path.replace("source", "raw_data")
     print(f"root_path: {root_path}")
@@ -23,13 +24,13 @@ def main():
     cr_xlsx = os.path.join(cr_path, "Code_Review_" + cr_week + ".xlsx")
     software_develop_team.save_as_excel("cr_result", cr_xlsx)
 
-    print("KPI processing start")
-    kpi_path = os.path.join(root_path, season)
-    kpi_csv_file_list = ["PMS_0401-0630.csv", "redmin_0401-0630.csv"]
-    kpi_process(kpi_path, kpi_csv_file_list, software_develop_team.members)
-    output_file = os.path.join(kpi_path, "2024Q2-KPI_Report.txt")
-    software_develop_team.save_as_text("kpi", output_file)
-    print("KPI processing end")
+    # print("KPI processing start")
+    # kpi_path = os.path.join(root_path, season)
+    # kpi_csv_file_list = ["PMS_0401-0630.csv", "redmin_0401-0630.csv"]
+    # kpi_process(kpi_path, kpi_csv_file_list, software_develop_team.members)
+    # output_file = os.path.join(kpi_path, "2024Q2-KPI_Report.txt")
+    # software_develop_team.save_as_text("kpi", output_file)
+    # print("KPI processing end")
 
 
 # 外部调用的时候不执行
