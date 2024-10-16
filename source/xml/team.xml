@@ -8,19 +8,19 @@
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Claire Liu' name_cn = '刘慧'>
-            <work_app item = "BID,RTO,PDS,SOS,SSR"/>
+            <work_app item = "BID,BFS,RTO,PDS,SOS,SSR"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = 'DIS,JDC,MQT,RTO,SOS,TLS,UPC,UPD'/>
         </developer>
         <developer name_en = 'Aleo Liu' name_cn = '刘洋洋'>
-            <work_app item = "FFC,FRI,EMG,CRA,ASC,HBM,RAS,RCS,GNA"/>
-            <work_module item = 'GPS,PROT'/>
+            <work_app item = "FFC,FRI,EMG,RAS,RCS"/>
+            <work_module item = 'GPS'/>
             <work_gl_app item = ''/>
             <work_pro_app item = 'BLECAN,CAN,CFU,LED'/>
         </developer>
         <developer name_en = 'Harper Kuang' name_cn = '匡婷'>
-            <work_app item = "SIM,SPD,TOW,OWH,PIN,TMA,WLT"/>
+            <work_app item = "SIM,SPD,TOW,OWH,PIN,TMA,PFC"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = 'BLEPIN,RELAY'/>
@@ -32,7 +32,7 @@
             <work_pro_app item = 'DOG,GTC,OSPD,SSR,TOF,TOW'/>
         </developer>
         <developer name_en = 'Vincent Cui' name_cn = '崔子晨'>
-            <work_app item = "IDA,IDS,IDC,CDA,GEO,PEO,PEG,GAM"/>
+            <work_app item = "IDA,IDS,IDC,CDA,CDS,GEO,PEO,PEG"/>
             <work_module item = ''/>
             <work_gl_app item = 'CFG,NMD,DOG,TMA,SFM,FKS,EMS,RDF'/>
             <work_pro_app item = ''/>
@@ -44,25 +44,25 @@
             <work_pro_app item = 'BLEID,IDA,IDS,TPM'/>
         </developer>
         <developer name_en = 'Haze Zhang' name_cn = '张仲俊'>
-            <work_app item = "SPA,BZA,DUC,CMD,UDF,AUS"/>
+            <work_app item = "SPA,BZA,DUC,CMD,UDF,AUS,PBD"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = 'ASC,CRA,HBM,HMC,IDL,ODO,VCD'/>
         </developer>
         <developer name_en = 'Allen Zhang' name_cn = '张学忠'>
-            <work_app item = "BSI,QSS,SRI,FVR,UPC,UPD,MDT"/>
+            <work_app item = "BSI,QSS,SRI,FVR,UPC,UPD"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Abert Xu' name_cn = '徐黎明'>
-            <work_app item = "MQT,AVS,VVS,VMS,SMS,OWL,LTP,TLS"/>
+            <work_app item = "AVS,VVS,VMS,SMS,OWL,URT,LTP"/>
             <work_module item = ''/>
             <work_gl_app item = 'BSI,QSS,SRI,MQT,TLS,LTP,RTP'/>
             <work_pro_app item = 'ACK,AGPS,AOL,APF,APN,APN2,BPL,BSS,BSS2,BTADV,BTBCN,BTKFB,BTSVR,CFG,CMD,DMS,EPS,GAM,GEO,GMC,GML,GMS,GSENSOR,HBD,NET,OWH,PIN,PPS,PROFILE,PWL,QRC,QSS,RDF,RPS,SMS,TMA,UDF'/>
         </developer>
         <developer name_en = 'Bear Cao' name_cn = '曹政'>
-            <work_app item = "HMC,HRM,CDS,MSI,MSF,WRT"/>
+            <work_app item = "HMC,HRM,MSI,MSF,GAM"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
@@ -79,20 +79,26 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
-        <developer name_en = 'Jack Li' name_cn = '李仁杰'>
+        <developer name_en = 'Asta Liu' name_cn = '刘宏斌'>
+            <work_app item = ""/>
+            <work_module item = ''/>
+            <work_gl_app item = ''/>
+            <work_pro_app item = ''/>
+        </developer>
+        <developer name_en = 'Adian Chen' name_cn = '陈旭东'>
             <work_app item = ""/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Elvin Shen' name_cn = '沈子扬'>
-            <work_app item = "CAN,CFU,TTR,CLT,AES,MQT,URT"/>
+            <work_app item = "CAN,CAS,CFU,TTR,CLT,AES,MQT,TLS"/>
             <work_module item = 'COMM,SERIAL'/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Ying Xiong' name_cn = '熊鹰'>
-            <work_app item = "CFG,CMS,TAP"/>
+            <work_app item = "CFG,CMS,TAP,WRT,FTP,WLT"/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
@@ -104,8 +110,8 @@
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Todd Zheng' name_cn = '郑功良'>
-            <work_app item = "DMS,DOG,FTP,FSC,FSI,FSS,PMS,IGM"/>
-            <work_module item = ''/>
+            <work_app item = "DMS,DOG,IGM,CRA,ASC,GNA,HBM"/>
+            <work_module item = 'PROT'/>
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
@@ -117,7 +123,7 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
-        <developer name_en = 'Swain Shen' name_cn = '申亚'>
+        <developer name_en = 'Harry Wu' name_cn = '吴严龙'>
             <work_app item = ""/>
             <work_module item = 'MCU'/>
             <work_gl_app item = ''/>
