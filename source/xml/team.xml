@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <team version="1.0">
-    <application>
+    <application_development_group>
         <developer name_en = 'Len Liu' name_cn = '刘信'>
             <work_app item = "AIS,EPS,EFS,FSC,UFS,JDC,JBS,IDL"/>
             <work_module item = ''/>
@@ -115,8 +115,8 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
-    </application>
-    <system>
+    </application_development_group>
+    <system_development_group>
         <developer name_en = 'Noah Qin' name_cn = '秦伟'>
             <work_app item = ""/>
             <work_module item = 'ATCI,SENSOR'/>
@@ -153,5 +153,5 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
-    </system>
+    </system_development_group>
 </team>
