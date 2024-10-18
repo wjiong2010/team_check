@@ -24,8 +24,10 @@ row_attr_index = {
 
 def date_diff_days(start_date, end_date):
     date_format = "%Y-%m-%d"
-    start_date = datetime.strptime(start_date, date_format)
-    end_date = datetime.strptime(end_date, date_format)
+    f_start = start_date.replace("/","-")
+    start_date = datetime.strptime(f_start, date_format)
+    f_end = end_date.replace("/","-")
+    end_date = datetime.strptime(f_end, date_format)
 
     # 计算相差天数
     delta = end_date - start_date
@@ -617,10 +619,12 @@ def row_parser(row_list, first_row, members):
         init_row_index(row_list)
     else:
         name = __get_name(row_list)
+        # found = False
         print(f"name: {name}")
         for mb in members:
             if mb.name_en.lower() == name:
                 mb.kpi.parse_kpi_row(row_list)
+                # found = True
 
     return name
 
