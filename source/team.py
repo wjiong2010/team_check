@@ -212,16 +212,33 @@ class Team:
                     parse_work(m, subNode)
                     m.kpi = KPIForOnePerson(m.name_en, m.name_cn)
                     self.members.append(m)
+    
+    def member_db_pro(self):
+        
+        for mb in self.members:
+            l = []
+            l.append(mb.name_en)
+            l.append(mb.name_cn)
+            l.append(mb.work_apps)
+            l.append(mb.work_gl_apps)
+            l.append(mb.work_pro_apps)
+            l.append(mb.work_modules)
+            l.append(mb.group)
+            print("llll: " + str(l))
+            self.member_db_list.append(l)
+        print("222: " + str(self.member_db_list))
+
 
     def print_members(self):
-        for mb in self.members:
-            print(mb.name_cn)
-            print(mb.name_en)
-            print(mb.group)
-            print(mb.work_apps)
-            print(mb.work_modules)
-            print(mb.work_gl_apps)
-            print(mb.work_pro_apps)
+        # for mb in self.members:
+        #     print(mb.name_cn)
+        #     print(mb.name_en)
+        #     print(mb.group)
+        #     print(mb.work_apps)
+        #     print(mb.work_modules)
+        #     print(mb.work_gl_apps)
+        #     print(mb.work_pro_apps)
+        print(self.member_db_list)
 
     def init_members(self):
         file = "xml\\team.xml"
@@ -241,10 +258,14 @@ class Team:
 
         for node in root.childNodes:
             if CR_ELEMENT_NODE == node.nodeType:  # 1 is Element
-                if 'application' == node.nodeName or 'system' == node.nodeName:
+                if 'application_development_group' == node.nodeName or 'system_development_group' == node.nodeName:
                     self.parse_developer(node)
+        
+        self.member_db_pro()
+        self.print_members()
 
     def __init__(self):
         self.COL_A_WIDTH = 20
         self.COL_B_WIDTH = 120
         self.members = []
+        self.member_db_list = []
