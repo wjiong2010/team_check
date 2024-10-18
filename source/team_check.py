@@ -17,7 +17,7 @@ def main():
 
     software_develop_team.init_members()
     db.init_prot_info()
-    db.mysql_proc("team_members", software_develop_team.members)
+    db.mysql_proc("team_members", software_develop_team.member_db_list)
     # software_develop_team.print_members()
 
     # cr_path = os.path.join(root_path, "cr_" + cr_week)
