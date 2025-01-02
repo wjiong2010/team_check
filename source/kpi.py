@@ -272,12 +272,13 @@ class itemREQUIREMENT(KPIItem):
             dd_line = ""
         else:
             dd_line = row_list[row_attr_index["dead_line"]]
+            
         print(f"requirement dd_line: {dd_line}")
 
-        # diff_days = deadline - complete_time, <=0 out time. >0: in time
+        # diff_days = deadline - complete_time, <0 out time. >=0: in time
         if len(dd_line) != 0 and len(cmp_t) != 0:
             self.diff_days = date_diff_days(cmp_t, dd_line)
-            if self.diff_days <= 0:
+            if self.diff_days < 0:
                 self.out_time += 1
             else:
                 self.in_time += 1
