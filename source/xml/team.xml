@@ -79,12 +79,6 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
-        <developer name_en = 'Asta Liu' name_cn = '刘宏斌'>
-            <work_app item = ""/>
-            <work_module item = ''/>
-            <work_gl_app item = ''/>
-            <work_pro_app item = ''/>
-        </developer>
         <developer name_en = 'Adian Chen' name_cn = '陈旭东'>
             <work_app item = ""/>
             <work_module item = ''/>
