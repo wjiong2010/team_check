@@ -2,6 +2,8 @@ import os
 import csv
 from datetime import datetime
 
+head_row_for_one_person = ['处理意见','ID','工作项类型','严重程度','标题','优先级','状态','负责人','截止日期','预估工时（小时）','所属项目','已登记工时（小时）','剩余工时（小时）','创建者','创建时间','实际完成时间','REOPEN-停留次数','已修复-停留时间','缺陷修复周期']
+
 row_attr_index = {
     "id": 0,
     "work_item_type": 0,
@@ -434,13 +436,15 @@ class KPIForOnePerson:
         p = get_csv_filename(r, name)
         if os.path.exists(p):
             os.remove(p)
-            print(f"{p} has been removed")
+            print("Clear exist file: " + p)
 
     def parse_kpi_row(self, kpi_row):
         work_type = kpi_row[row_attr_index["work_item_type"]]
         id_v = kpi_row[row_attr_index["id"]]
         st = kpi_row[row_attr_index["status"]]
         print("work type: ", work_type)
+
+        self.oper_res = self.oper_result_dict['normal']
 
         if work_type in self.fae_bug.name_list:
             if row_attr_index["reopen_times"] == 0:
@@ -465,6 +469,12 @@ class KPIForOnePerson:
         self.requirement.calcu_summary()
 
     def __init__(self, name_en, name_cn):
+        self.oper_result_dict = {
+            'normal' : "正常",
+            'revised' : "已修订",
+            'ignore' : "忽略"
+        }
+        self.oper_res = ""
         self.name_en = name_en
         self.name_cn = name_cn
         self.work_type = ''
@@ -615,7 +625,7 @@ def __get_item_type(row_list):
 
 
 def row_parser(row_list, first_row, members):
-    name = ""
+    sig_mb = None
     if first_row:
         init_row_index(row_list)
     else:
@@ -625,29 +635,42 @@ def row_parser(row_list, first_row, members):
         for mb in members:
             if mb.name_en.lower() == name:
                 mb.kpi.parse_kpi_row(row_list)
+                sig_mb = mb
+                break
                 # found = True
 
-    return name
+    return sig_mb
 
 
-def row_save(r_path, name, row):
-    p = get_csv_filename(r_path, name)
+def row_save(r_path, mb, row):
+    p = get_csv_filename(r_path, mb.kpi.name_en.lower())
+    if not os.path.exists(p):
+        is_first_row = True
+    else:
+        is_first_row = False
+
+    final_row = [mb.kpi.oper_res]
+    final_row += row
     print(f"saving {p}")
-    print(f"row: {row}")
+    print(f"final_row: {final_row}")
     with open(p, 'a', encoding="utf-8-sig") as csv_f:
         writer = csv.writer(csv_f, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-        writer.writerow(row)
+        if is_first_row:
+            print("create the first line for {}".format(csv_f))
+            writer.writerow(head_row_for_one_person)
+        writer.writerow(final_row)
 
 
 def kpi_process(r_path, csv_list, members):
-    for mb in members:
-        mb.kpi.reset(r_path, mb.name_en)
 
     sep_kpi_fold = csv_list[0]
     sep_kpi_fold = sep_kpi_fold[sep_kpi_fold.find("_") + 1:sep_kpi_fold.rfind(".")]
     sep_kpi_fold = os.path.join(r_path, sep_kpi_fold)
     if not os.path.exists(sep_kpi_fold):
         os.makedirs(sep_kpi_fold)
+    else:
+        for mb in members:
+            mb.kpi.reset(sep_kpi_fold, mb.name_en)
 
     for csv_file in csv_list:
         first_row = True
@@ -657,10 +680,10 @@ def kpi_process(r_path, csv_list, members):
         with open(fpath, 'r', encoding="utf-8") as csv_f:
             reader = csv.reader(csv_f)
             for r_list in reader:
-                row_name = row_parser(r_list, first_row, members)
+                mb = row_parser(r_list, first_row, members)
                 first_row = False
-                if '' != row_name:
-                    row_save(sep_kpi_fold, row_name, r_list)
+                if mb is not None:
+                    row_save(sep_kpi_fold, mb, r_list)
 
     for mb in members:
         mb.kpi.kpi_summary()
