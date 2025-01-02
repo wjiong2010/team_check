@@ -167,10 +167,10 @@ class Team:
 
         for mb in self.members:
             if 'cr_result' == select:
-                if mb.group == 'application':
+                if mb.group == 'application_development_group':
                     app_r += mb.cr_result_in_excel(ws_app, app_r)
                     app_r += 1
-                if mb.group == 'system':
+                if mb.group == 'system_development_group':
                     sys_r += mb.cr_result_in_excel(ws_sys, sys_r)
                     sys_r += 1
 
@@ -195,7 +195,7 @@ class Team:
         for mb in self.members:
             if 'cr_result' == select:
                 summary_in_text += mb.cr_result_in_text()
-            if 'kpi' == select and mb.group == 'application':
+            if 'kpi' == select and mb.group == 'application_development_group':
                 summary_in_text += mb.kpi_in_text()
 
         with open(txt, 'w', encoding='utf-8') as f:
