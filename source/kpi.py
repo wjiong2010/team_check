@@ -2,7 +2,8 @@ import os
 import csv
 from datetime import datetime
 
-head_row_for_one_person = ['处理意见','ID','工作项类型','严重程度','标题','优先级','状态','负责人','截止日期','预估工时（小时）','所属项目','已登记工时（小时）','剩余工时（小时）','创建者','创建时间','实际完成时间','REOPEN-停留次数','已修复-停留时间','缺陷修复周期']
+head_row_for_one_person = ['处理意见','ID','工作项类型','严重程度','标题','优先级','状态','负责人','截止日期','预估工时（小时）','所属项目','已登记工时（小时）',
+                           '剩余工时（小时）','创建者','创建时间','实际完成时间','REOPEN-停留次数','已修复-停留时间','缺陷修复周期']
 
 row_attr_index = {
     "id": 0,
@@ -138,17 +139,18 @@ class KPIItem:
                 self.status_counter[k] += 1
                 break
 
-    def get_status_count(self, st):
-        c = 0
+    def do_status_count(self, st):
+        i = st.find('（')
+        if i != -1:
+            st = st[:i]
+
         keys_list = list(self.status_counter.keys())
         for k in keys_list:
             print(f"checking {st} in {k}")
             if -1 != k.find(st):
                 print(f"{st} in {k}")
-                c = self.status_counter[k]
+                self.status_counter[k] += 1
                 break
-
-        return c
 
     def rate_calculater(self, rt_list, pre, count=0):
         if self.total == 0:
@@ -174,6 +176,15 @@ class KPIItem:
             c += d[r]
 
         return c
+    
+    def get_reopen_time(self, row_list):
+        if row_attr_index["reopen_times"] != 0:
+            rop_t = row_list[row_attr_index["reopen_times"]]
+            print(f"kpi item reopen times: {rop_t}")
+            if len(rop_t) != 0:
+                return int(rop_t)
+
+        return 0
 
 
 class itemFAEBUG(KPIItem):
@@ -201,10 +212,11 @@ class itemFAEBUG(KPIItem):
         self.summary += " " * 4 + self.reopen_pre + "null"
         self.reopen_times = 0
 
-    def do_proc_fae(self, id_v, st, ty, rop_t):
-        super().do_proc(id_v, st, ty)
-        if len(rop_t) != 0:
-            self.reopen_times += int(rop_t)
+    def do_proc_fae(self, id_v, st, ty, row_list):
+        self.total += 1
+        super().do_status_count(st)
+        # super().do_proc(id_v, st, ty)
+        self.reopen_times += super().get_reopen_time(row_list)
 
     def calcu_summary(self):
         rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "CLOSED-关闭", "NO_RESPONSE"]
@@ -387,12 +399,9 @@ class itemST_BUG(KPIItem):
         print(f"st_bug bug_finish_time: {bug_ft_mins}")
         self.finish_time[severity] += bug_ft_mins
 
-        if row_attr_index["reopen_times"] != 0:
-            rop_t = row_list[row_attr_index["reopen_times"]]
-            print(f"st_bug rop_t: {rop_t}")
-            if len(rop_t) != 0:
-                self.reopen_times += int(rop_t)
-                self.reopened[severity] += int(rop_t)
+        rop_t = super().get_reopen_time(row_list)
+        self.reopen_times += rop_t
+        self.reopened[severity] += rop_t
 
         if st == 'REOPENED':
             self.reopen_times += 1
@@ -447,12 +456,7 @@ class KPIForOnePerson:
         self.oper_res = self.oper_result_dict['normal']
 
         if work_type in self.fae_bug.name_list:
-            if row_attr_index["reopen_times"] == 0:
-                rop_t = ""
-            else:
-                rop_t = kpi_row[row_attr_index["reopen_times"]]
-            print(f"fae_bug rop_t: {rop_t}")
-            self.fae_bug.do_proc_fae(id_v, st, work_type, rop_t)
+            self.fae_bug.do_proc_fae(id_v, st, work_type, kpi_row)
         elif work_type in self.prot_dev.name_list:
             self.prot_dev.do_proc(id_v, st, work_type)
         elif work_type in self.st_bug.name_list:
