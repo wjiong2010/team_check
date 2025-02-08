@@ -196,9 +196,10 @@ class itemFAEBUG(KPIItem):
             "NO_RESPONSE": 0,
             "RESOLVED": 0,
             "REOPEN": 0,
+            "REOPEN_CONFIRM": 0,
             "WAIT_FEEDBACK": 0,
-            "NEW": 0,
-            "DOING": 0,
+            "NEW-未开始": 0,
+            "DOING-进行中": 0,
             "ASSIGNED": 0,
             "PENDING": 0,
             "TESTING": 0,
@@ -239,8 +240,9 @@ class itemREQUIREMENT(KPIItem):
         self.status_counter = {
             "RESOLVED": 0,
             "REOPEN": 0,
+            "REOPEN_CONFIRM": 0,
             "WAIT_FEEDBACK": 0,
-            "NEW": 0,
+            "NEW-未开始": 0,
             "DOING-进行中": 0,
             "ASSIGNED": 0,
             "PENDING": 0,
@@ -249,6 +251,7 @@ class itemREQUIREMENT(KPIItem):
             "WAIT_RELEASE": 0,
             "关闭": 0,
             "NO_FEEDBACK": 0,
+            "EVALUATING": 0,
             "NO_RESPONSE": 0
         }
         self.fix_pre = "REQUIREMENT Completed: "
@@ -289,7 +292,7 @@ class itemREQUIREMENT(KPIItem):
             
         print(f"requirement dd_line: {dd_line}")
 
-        # diff_days = deadline - complete_time, <0 out time. >=0: in time
+        # diff_days = deadline - complete_time, < 0 timeout. >=0: in time
         if len(dd_line) != 0 and len(cmp_t) != 0:
             self.diff_days = date_diff_days(cmp_t, dd_line)
             if self.diff_days < 0:
@@ -331,8 +334,8 @@ class itemPROT_DEV(KPIItem):
             "WAIT_FEEDBACK": 0,
             "NEW-未开始": 0,
             "DOING-进行中": 0,
-            "ASSIGNED": 0,
-            "PENDING": 0,
+            "ASSIGNED-已分配": 0,
+            "PENDING-暂停": 0,
             "TESTING": 0,
             "REJECTED": 0,
             "WAIT_RELEASE": 0,
@@ -360,6 +363,7 @@ class itemST_BUG(KPIItem):
             "拒绝": 0,
             "CLOSED-关闭": 0,
             "REOPENED-重新打开": 0,
+            "REOPEN": 0,
             "验证中": 0
         }
         self.reopen_times = 0
@@ -403,7 +407,7 @@ class itemST_BUG(KPIItem):
         self.reopen_times += rop_t
         self.reopened[severity] += rop_t
 
-        if st == 'REOPENED':
+        if st == 'REOPENED' or st == 'REOPEN':
             self.reopen_times += 1
             self.reopened[severity] += 1
 
