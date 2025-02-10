@@ -224,9 +224,9 @@ class Team:
             l.append(mb.work_pro_apps)
             l.append(mb.work_modules)
             l.append(mb.group)
-            print("llll: " + str(l))
+            # print("llll: " + str(l))
             self.member_db_list.append(l)
-        print("222: " + str(self.member_db_list))
+        # print("222: " + str(self.member_db_list))
 
 
     def print_members(self):
