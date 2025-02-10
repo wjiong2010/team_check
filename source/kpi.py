@@ -2,27 +2,179 @@ import os
 import csv
 from datetime import datetime
 
-head_row_for_one_person = ['处理意见','ID','工作项类型','严重程度','标题','优先级','状态','负责人','截止日期','预估工时（小时）','所属项目','已登记工时（小时）',
-                           '剩余工时（小时）','创建者','创建时间','实际完成时间','REOPEN-停留次数','已修复-停留时间','缺陷修复周期']
 
-row_attr_index = {
-    "id": 0,
-    "work_item_type": 0,
-    "severity": 0,
-    "title": 0,
-    "status": 0,
-    "person_in_charge": 0,
-    "dead_line": 0,
-    "complete_time": 0,
-    "bug_finish_time": 0,
-    "estimated_man_hours": 0,
-    "registered_man_hours": 0,
-    "rest_man_hours": 0,
-    "reopen_times": 0,
-    "creator": 0,
-    "creation_time": 0,
-    "project": ""
-}
+
+def get_csv_filename(r, fn):
+    t_fn = fn.replace(" ", "_") + ".csv"
+    return os.path.join(r, t_fn)
+
+
+class KPIRow:
+    def get_name(self, row_list):
+        """
+        :param row_list: pick up name from row_list, 
+                eg, #27411,任务,,测试FRI ERI命令及报文,Normal,进行中,Easy,aidan.chen-HFSW,,0h,QPDC,8.5h,0h,aidan.chen-HFSW,2025-01-24 16:56:31,,,,,,,,,
+                the name of person in charge is aidan.chen-HFSW, we should covert it to 'aidan chen'
+        :return: name in lower case, each word are seperated by space
+        """
+        name = row_list[self.row_index["person_in_charge"]]
+        if name.endswith("HFSW"):
+            name = name[:-5]
+            name = name.replace(".", " ")
+
+        name = name.lower()
+
+        return name
+    
+    def init_folder(self, r, name):
+        self._path = r
+        p = get_csv_filename(r, name)
+        if os.path.exists(p):
+            os.remove(p)
+            print("Clear exist file: " + p)
+
+    def get_kpi_row(self):
+        """
+        :return: the kpi row
+        """
+        return [self.id, self.work_item_type, self.severity, self.title, self.priority, self.status, self.difficulty, self.person_in_charge, self.dead_line, self.complete_time, self.bug_fix_cycle, self.bug_fixed_duration, self.estimated_workinghours, self.registered_workinghours, self.rest_workinghours, self.project_name, self.creator, self.creation_time, self.reopen_times, self.reopen_duration, self.reopen_confirm_times, self.reopen_confirm_duration, self.state_detail, self.evaluating_duration, self.assigned_duration, self.assigned_times, self.pending_times, self.pending_duration]
+    
+    # ones
+    # ID, 工作项类型, 严重程度, 标题, 优先级, 状态, Difficulty Degree, 负责人, 截止日期, 预估工时（小时）, 所属项目, 已登记工时（小时）, 剩余工时（小时）, 创建者, 创建时间, 
+    # 实际完成时间, REOPEN-停留次数, REOPEN-停留时间, REOPEN_CONFIRM-停留次数, REOPEN_CONFIRM-停留时间, 已修复-停留时间, 缺陷修复周期, State Details, EVALUATING-停留时间
+    # ,ASSIGNED-停留时间,ASSIGNED-停留次数,PENDING-停留次数,PENDING-停留时间
+    # redmin
+    # ['#', '跟踪', 'Severity', '主题', '状态', '指派给', '计划完成日期', '预估工时统计', '耗时', '预期时间', '作者', '创建于', '项目', '结束日期']
+    def init_row_index(self, row):
+        print(str(row))
+        for attr in self.row_attribut_list:
+            _name = attr["name"]
+            _keys = attr["key_words"]
+            _def  = attr["default_index"]
+            try:
+                _index = row.index(_keys[0])
+                self.head_line.append(_keys[0])
+            except ValueError:
+                print("error!!")
+                if len(_keys) > 1:
+                    _index = row.index(_keys[1])
+                else:
+                    _index = _def
+            print("{}: {}".format(_name, _index))
+            self.row_index.update({_name: _index})
+        
+        print(self.row_index)
+        print(self.head_line)
+    
+    def save_csv(self, row):
+        path = os.path.join(self._path, self.member_name + ".csv")
+        with open(path, 'a', encoding="utf-8-sig") as csv_f:
+            writer = csv.writer(csv_f, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            if self.is_first_row:
+                print("create the first line for {}".format(csv_f))
+                writer.writerow(self.head_line)
+            writer.writerow(row)
+
+    def save_kpi_row(self, mb, format = "csv"):
+        final_row = [mb.kpi.oper_res]
+        final_row += self.get_kpi_row()
+        print(f"final_row: {final_row}")
+        if format == "csv":
+            self.save_csv(final_row)
+        else:
+            print("save as text or push to database")
+
+    def pre_proc(self, row_list, members):
+
+        print("pre_proc: {}".format(self.is_first_row))
+        if self.is_first_row:
+            self.init_row_index(row_list)
+        else:
+            # split the row into different items and save them to the corresponding parameters
+            print("sssss:   " + str(row_list))            
+
+            # get member from members by name
+            self.member_name = self.get_name(row_list)
+            member = None
+            print(f"name: {self.member_name}")
+            for mb in members:
+                if mb.name_en.lower() == self.member_name:
+                    member = mb
+                    break
+            
+            if member is not None:
+                print(f"member {self.member_name} found")
+                return member
+            else:
+                print(f"member {self.member_name} not found")
+                return None
+
+    def __init__(self):
+        self.id = ""                    
+        self.work_item_type = ""        
+        self.severity = ""              
+        self.priority = ""              
+        self.title = ""                 
+        self.status = ""                
+        self.difficulty = ""            
+        self.person_in_charge = ""      
+        self.dead_line = ""             
+        self.complete_time = ""         
+        self.bug_fix_cycle = ""         
+        self.bug_fixed_duration = ""    
+        self.estimated_workinghours = ""
+        self.registered_workinghours = ""
+        self.rest_workinghours = ""     
+        self.project_name = ""          
+        self.creator = ""               
+        self.creation_time = ""         
+        self.reopen_times = ""          
+        self.reopen_duration = ""       
+        self.reopen_confirm_times = ""  
+        self.reopen_confirm_duration = ""
+        self.state_detail = ""          
+        self.evaluating_duration = ""   
+        self.assigned_duration = ""     
+        self.assigned_times = ""        
+        self.pending_times = ""         
+        self.pending_duration = ""      
+        self.row_attribut_list = [
+            {"name": "id",                      "key_words": ['ID'],                            "default_index": 0},
+            {"name": "work_item_type",          "key_words": ['工作项类型', '跟踪'],            "default_index": -1},
+            {"name": "severity",                "key_words": ['严重程度', 'Severity'],          "default_index": -1},
+            {"name": "priority",                "key_words": ['优先级'],                        "default_index": -1},
+            {"name": "title",                   "key_words": ['标题', '主题'],                  "default_index": -1},
+            {"name": "status",                  "key_words": ['状态'],                          "default_index": -1},
+            {"name": "difficulty",              "key_words": ['Difficulty Degree'],             "default_index": -1},
+            {"name": "person_in_charge",        "key_words": ['负责人', '指派给'],                  "default_index": -1},
+            {"name": "dead_line",               "key_words": ['计划完成日期','截止日期'],           "default_index": -1},
+            {"name": "complete_time",           "key_words": ['实际完成时间', '结束日期'],          "default_index": -1},
+            {"name": "bug_fix_cycle",           "key_words": ['缺陷修复周期'],                      "default_index": -1},
+            {"name": "bug_fixed_duration",      "key_words": ['已修复-停留时间'],                   "default_index": -1},
+            {"name": "estimated_workinghours",  "key_words": ['预估工时（小时）', '预估工时统计'],   "default_index": -1},
+            {"name": "registered_workinghours", "key_words": ['已登记工时（小时）', '耗时'],        "default_index": -1},
+            {"name": "rest_workinghours",       "key_words": ['剩余工时（小时）', '预期时间'],      "default_index": -1},
+            {"name": "project_name",            "key_words": ['所属项目', '项目'],                   "default_index": -1},
+            {"name": "creator",                 "key_words": ['创建者', '作者'],                    "default_index": -1},
+            {"name": "creation_time",           "key_words": ['创建时间', '创建于'],                "default_index": -1},
+            {"name": "reopen_times",            "key_words": ['REOPEN-停留次数'],                    "default_index": -1},
+            {"name": "reopen_duration",         "key_words": ['REOPEN-停留时间'],                    "default_index": -1},
+            {"name": "reopen_confirm_times",    "key_words": ['REOPEN_CONFIRM-停留次数'],             "default_index": -1},
+            {"name": "reopen_confirm_duration", "key_words": ['REOPEN_CONFIRM-停留时间'],             "default_index": -1},
+            {"name": "state_detail",            "key_words": ['State Details'],                     "default_index": -1},
+            {"name": "evaluating_duration",     "key_words": ['EVALUATING-停留时间'],             "default_index": -1},
+            {"name": "assigned_duration",       "key_words": ['ASSIGNED-停留时间'],                 "default_index": -1},
+            {"name": "assigned_times",          "key_words": ['ASSIGNED-停留次数'],                "default_index": -1},
+            {"name": "pending_times",           "key_words": ['PENDING-停留次数'],                "default_index": -1},
+            {"name": "pending_duration",        "key_words": ['PENDING-停留时间'],                "default_index": -1}
+        ]
+        self.head_line = []
+        self.row_index = {}
+        self.is_first_row = True
+        self.member_name = ""
+        self._path = ""
+
+kpi_row = KPIRow()
 
 
 def date_diff_days(start_date, end_date):
@@ -389,8 +541,8 @@ class itemST_BUG(KPIItem):
 
         # diff days
         bug_ft_mins = 0
-        r = row_attr_index["bug_finish_time"]
-        print(f"st_bug bug_finish_time: {r}/{len(row_list)}")
+        r = row_attr_index["bug_fix_cycle"]
+        print(f"st_bug bug_fix_cycle: {r}/{len(row_list)}")
         if r != 0:
             bug_ft = row_list[r]
 
@@ -400,7 +552,7 @@ class itemST_BUG(KPIItem):
         else:
             self.redmin_bug[severity] += 1
 
-        print(f"st_bug bug_finish_time: {bug_ft_mins}")
+        print(f"st_bug bug_fix_cycle: {bug_ft_mins}")
         self.finish_time[severity] += bug_ft_mins
 
         rop_t = super().get_reopen_time(row_list)
@@ -434,22 +586,13 @@ class itemST_BUG(KPIItem):
         self.summary += reopened_time
 
 
-def get_csv_filename(r, fn):
-    t_fn = fn.replace(" ", "_") + ".csv"
-    return os.path.join(r, t_fn)
-
 
 class KPIForOnePerson:
-
     def reset(self, r, name):
         self.fae_bug.reset()
         self.requirement.reset()
         self.st_bug.reset()
         self.prot_dev.reset()
-        p = get_csv_filename(r, name)
-        if os.path.exists(p):
-            os.remove(p)
-            print("Clear exist file: " + p)
 
     def parse_kpi_row(self, kpi_row):
         work_type = kpi_row[row_attr_index["work_item_type"]]
@@ -492,185 +635,33 @@ class KPIForOnePerson:
         self.requirement = itemREQUIREMENT()
         self.prot_dev = itemPROT_DEV()
         self.st_bug = itemST_BUG()
+        self._path = ''
         # self.report = ""
 
 
-# ones
-# ['\ufeffID', '工作项类型', '严重程度', '标题', '状态', '负责人', '截止日期', '预估工时（小时）', '已登记工时（小时）', '剩余工时（小时）', '重新打开-停留次数', '创建者',
-# '创建时间', '所属项目']
-# redmin
-# ['\ufeff#', '跟踪', 'Severity', '主题', '状态', '指派给', '计划完成日期', '预估工时统计', '耗时', '预期时间', '作者', '创建于', '项目']
-def init_row_index(row):
-    row_attr_index["id"] = 0
-    try:
-        row_attr_index["work_item_type"] = row.index("工作项类型")
-    except ValueError:
-        print("error!!")
-        row_attr_index["work_item_type"] = row.index("跟踪")
-    r = row_attr_index["work_item_type"]
-    print(f"work_item_type: {r}")
-
-    try:
-        row_attr_index["severity"] = row.index("严重程度")
-    except ValueError:
-        print("error!!")
-        row_attr_index["severity"] = row.index("Severity")
-    r = row_attr_index["severity"]
-    print(f"severity: {r}")
-
-    try:
-        row_attr_index["title"] = row.index("标题")
-    except ValueError:
-        print("error!!")
-        row_attr_index["title"] = row.index("主题")
-    r = row_attr_index["title"]
-    print(f"title: {r}")
-
-    row_attr_index["status"] = row.index("状态")
-    r = row_attr_index["status"]
-    print(f"status: {r}")
-
-    try:
-        row_attr_index["person_in_charge"] = row.index("负责人")
-    except ValueError:
-        print("error!!")
-        row_attr_index["person_in_charge"] = row.index("指派给")
-    r = row_attr_index["person_in_charge"]
-    print(f"person_in_charge: {r}")
-
-    try:
-        row_attr_index["dead_line"] = row.index("截止日期")
-    except ValueError:
-        print("error!!")
-        row_attr_index["dead_line"] = row.index("计划完成日期")
-    r = row_attr_index["dead_line"]
-    print(f"dead_line: {r}")
-
-    try:
-        row_attr_index["complete_time"] = row.index("实际完成时间")
-    except ValueError:
-        print("complete_time error!!")
-        row_attr_index["complete_time"] = row.index("结束日期")
-    r = row_attr_index["complete_time"]
-    print(f"complete_time: {r}")
-
-    try:
-        row_attr_index["bug_finish_time"] = row.index("缺陷修复周期")
-    except ValueError:
-        print("bug_finish_time error!!")
-        row_attr_index["bug_finish_time"] = 0
-    r = row_attr_index["bug_finish_time"]
-    print(f"bug_finish_time: {r}")
-
-    try:
-        row_attr_index["estimated_man_hours"] = row.index("预估工时（小时）")
-    except ValueError:
-        print("error!!")
-        row_attr_index["estimated_man_hours"] = row.index("预估工时统计")
-    r = row_attr_index["estimated_man_hours"]
-    print(f"estimated_man_hours: {r}")
-
-    try:
-        row_attr_index["registered_man_hours"] = row.index("已登记工时（小时）")
-    except ValueError:
-        print("error!!")
-        row_attr_index["registered_man_hours"] = row.index("耗时")
-    r = row_attr_index["registered_man_hours"]
-    print(f"registered_man_hours: {r}")
-
-    try:
-        row_attr_index["creator"] = row.index("创建者")
-    except ValueError:
-        print("error!!")
-        row_attr_index["creator"] = row.index("作者")
-    r = row_attr_index["creator"]
-    print(f"creator: {r}")
-
-    try:
-        row_attr_index["creation_time"] = row.index("创建时间")
-    except ValueError:
-        print("error!!")
-        row_attr_index["creation_time"] = row.index("创建于")
-    r = row_attr_index["creation_time"]
-    print(f"creation_time: {r}")
-
-    try:
-        row_attr_index["project"] = row.index("所属项目")
-    except ValueError:
-        print("error!!")
-        row_attr_index["project"] = row.index("项目")
-    r = row_attr_index["project"]
-    print(f"project: {r}")
-
-    try:
-        row_attr_index["reopen_times"] = row.index("REOPEN-停留次数")
-    except ValueError:
-        print("error!!")
-        row_attr_index["reopen_times"] = 0
-    r = row_attr_index["reopen_times"]
-    print(f"reopen_times: {r}")
-
-    print(row_attr_index)
-
-
-def __get_name(row_list):
-    """
-    :param row_list:
-    :return: name in lower case, each word are seperated by space, like: john wang
-    """
-    name = row_list[row_attr_index["person_in_charge"]]
-    if name.endswith("HFSW"):
-        name = name[:-5]
-        name = name.replace(".", " ")
-
-    name = name.lower()
-
-    return name
-
-
-def __get_item_type(row_list):
-    return row_list[row_attr_index["work_item_type"]]
-
-
 def row_parser(row_list, first_row, members):
-    sig_mb = None
     if first_row:
-        init_row_index(row_list)
+        #init_row_index(row_list)
+        kpi_row.init_row_index(row_list)
     else:
-        name = __get_name(row_list)
-        # found = False
+        kpi_row.pre_proc(row_list)
+        name = kpi_row.get_name(row_list)
+        member = None
         print(f"name: {name}")
         for mb in members:
             if mb.name_en.lower() == name:
-                mb.kpi.parse_kpi_row(row_list)
-                sig_mb = mb
+                member = mb
                 break
-                # found = True
-
-    return sig_mb
-
-
-def row_save(r_path, mb, row):
-    p = get_csv_filename(r_path, mb.kpi.name_en.lower())
-    if not os.path.exists(p):
-        is_first_row = True
-    else:
-        is_first_row = False
-
-    final_row = [mb.kpi.oper_res]
-    final_row += row
-    print(f"saving {p}")
-    print(f"final_row: {final_row}")
-    with open(p, 'a', encoding="utf-8-sig") as csv_f:
-        writer = csv.writer(csv_f, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-        if is_first_row:
-            print("create the first line for {}".format(csv_f))
-            writer.writerow(head_row_for_one_person)
-        writer.writerow(final_row)
+        
+        if member is not None:
+            member.parse_kpi_row(kpi_row)
+            return member
+        else:
+            print(f"member {name} not found")
+            return None
 
 
 def kpi_process(r_path, csv_list, members):
-
     sep_kpi_fold = csv_list[0]
     sep_kpi_fold = sep_kpi_fold[sep_kpi_fold.find("_") + 1:sep_kpi_fold.rfind(".")]
     sep_kpi_fold = os.path.join(r_path, sep_kpi_fold)
@@ -678,20 +669,23 @@ def kpi_process(r_path, csv_list, members):
         os.makedirs(sep_kpi_fold)
     else:
         for mb in members:
-            mb.kpi.reset(sep_kpi_fold, mb.name_en)
-
+            kpi_row.init_folder(sep_kpi_fold, mb.name_en)
+    
     for csv_file in csv_list:
-        first_row = True
         fpath = os.path.join(r_path, csv_file)
         print(f"fpath: {fpath}, fn: {csv_file}")
 
-        with open(fpath, 'r', encoding="utf-8") as csv_f:
+        with open(fpath, 'r', encoding="utf-8-sig") as csv_f:
+            # set the first row as True when open an new file
+            kpi_row.is_first_row = True
             reader = csv.reader(csv_f)
             for r_list in reader:
-                mb = row_parser(r_list, first_row, members)
-                first_row = False
+                mb = kpi_row.pre_proc(r_list, members)
                 if mb is not None:
-                    row_save(sep_kpi_fold, mb, r_list)
+                    # mb.parse_kpi_row(kpi_row)
+                    kpi_row.save_kpi_row(mb)
+                
+                kpi_row.is_first_row = False
 
-    for mb in members:
-        mb.kpi.kpi_summary()
+    #for mb in members:
+    #    mb.kpi.kpi_summary()
