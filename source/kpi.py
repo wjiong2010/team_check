@@ -214,6 +214,9 @@ def minutes_to_dhm(minutes):
             2 分钟
             6 天27 分钟
     """
+    if minutes == 0:
+        return "0 分钟"
+    
     ret_str = ""
     days = int(minutes // 1440)
     if days != 0:
@@ -237,6 +240,9 @@ def dhm_to_minutes(dhm):
                 6 天27 分钟
     :return: time in minutes
     """
+    if len(dhm) == 0:
+        return 0
+
     days = 0
     hours = 0
     minutes = 0
@@ -294,21 +300,10 @@ class KPIItem:
         # print(ts)
         return ts
 
-    def do_proc(self, id_v, st, ty):
-        print(f"ID: {id_v}, Status: {st}, Type: {ty} in {self.name_list}")
-        i = st.find('（')
-        if i != -1:
-            st = st[:i]
-        self.total += 1
-        keys_list = list(self.status_counter.keys())
-        for k in keys_list:
-            print(f"checking {st} in {k}")
-            if -1 != k.find(st):
-                print(f"{st} in {k}")
-                self.status_counter[k] += 1
-                break
-
     def do_status_count(self, st):
+        self.total += 1
+
+        # remove the content in '（'
         i = st.find('（')
         if i != -1:
             st = st[:i]
@@ -345,15 +340,6 @@ class KPIItem:
             c += d[r]
 
         return c
-    
-    def get_reopen_time(self, row_list):
-        if row_attr_index["reopen_times"] != 0:
-            rop_t = row_list[row_attr_index["reopen_times"]]
-            print(f"kpi item reopen times: {rop_t}")
-            if len(rop_t) != 0:
-                return int(rop_t)
-
-        return 0
 
 
 class itemFAEBUG(KPIItem):
@@ -382,11 +368,15 @@ class itemFAEBUG(KPIItem):
         self.summary += " " * 4 + self.reopen_pre + "null"
         self.reopen_times = 0
 
-    def do_proc_fae(self, id_v, st, ty, row_list):
+    def parser(self, kpi_row):
+        # total count
         self.total += 1
-        super().do_status_count(st)
-        # super().do_proc(id_v, st, ty)
-        self.reopen_times += super().get_reopen_time(row_list)
+        
+        # count status
+        super().do_status_count(kpi_row.status)
+        
+        # reopen times
+        self.reopen_times += int(kpi_row.reopen_times)
 
     def calcu_summary(self):
         rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "CLOSED-关闭", "NO_RESPONSE"]
@@ -432,33 +422,26 @@ class itemREQUIREMENT(KPIItem):
         self.in_time = 0
         self.out_time = 0
 
-    def do_proc_req(self, id_v, st, ty, row_list):
-        super().do_proc(id_v, st, ty)
-        if row_attr_index["reopen_times"] == 0:
-            rop_t = ""
-        else:
-            rop_t = row_list[row_attr_index["reopen_times"]]
+    def parser(self, kpi_row):
+        # status count
+        super().do_status_count(kpi_row.status)
+        
+        # reopen times
+        rop_t = kpi_row.reopen_times
         print(f"requirement rop_t: {rop_t}")
         if len(rop_t) != 0:
             self.reopen_times += int(rop_t)
 
         # complete in time
-        if row_attr_index["complete_time"] == 0:
-            cmp_t = ""
-        else:
-            cmp_t = row_list[row_attr_index["complete_time"]]
-            if cmp_t != "":
-                l = cmp_t.split()
-                print(f"complete time: {l}, {cmp_t}")
-                cmp_t = "".join(l[0])
+        cmp_t = kpi_row.complete_time
+        if cmp_t != "":
+            l = cmp_t.split()
+            print(f"complete time: {l}, {cmp_t}")
+            cmp_t = "".join(l[0])
         print(f"requirement cmp_t: {cmp_t}")
 
         # deadline
-        if row_attr_index["dead_line"] == 0:
-            dd_line = ""
-        else:
-            dd_line = row_list[row_attr_index["dead_line"]]
-            
+        dd_line = kpi_row.dead_line
         print(f"requirement dd_line: {dd_line}")
 
         # diff_days = deadline - complete_time, < 0 timeout. >=0: in time
@@ -468,6 +451,9 @@ class itemREQUIREMENT(KPIItem):
                 self.out_time += 1
             else:
                 self.in_time += 1
+        # for requirement without deadline, consider it as out time
+        elif len(dd_line) == 0:
+            self.out_time += 1
 
     def calcu_summary(self):
         rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "关闭", "WAIT_FEEDBACK", "NO_RESPONSE"]
@@ -512,6 +498,9 @@ class itemPROT_DEV(KPIItem):
         }
         self.fix_pre = "Protocol & Develop Complete: "
         self.summary = " " * 4 + self.fix_pre + "null"
+    
+    def parser(self, kpi_row):
+        super().do_status_count(kpi_row.status)
 
     def calcu_summary(self):
         rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "CLOSED-关闭", "WAIT_FEEDBACK",
@@ -546,37 +535,39 @@ class itemST_BUG(KPIItem):
         self.finish_time = {"Critical": 0, "Major": 0, "Normal": 0}
         self.diff_total = {"Critical": 0, "Major": 0, "Normal": 0}
 
-    def do_proc_req(self, id_v, st, ty, row_list):
-        super().do_proc(id_v, st, ty)
-        # severity
-        if row_attr_index["severity"] == 0:
-            severity = ""
+    def parser(self, kpi_row):
+        # item type
+        if kpi_row.work_item_type != "缺陷":
+            is_redmin = True
         else:
-            severity = row_list[row_attr_index["severity"]]
-            print(f"st_bug severity: {severity}, value:{self.diff_total[severity]}")
-            self.diff_total[severity] += 1
+            is_redmin = False
+        
+        # status
+        super().do_status_count(kpi_row.status)
+        
+        # severity: critical, major, normal
+        severity = kpi_row.severity
+        print(f"st_bug severity: {severity}, value:{self.diff_total[severity]}")
+        self.diff_total[severity] += 1
 
         # diff days
         bug_ft_mins = 0
-        r = row_attr_index["bug_fix_cycle"]
-        print(f"st_bug bug_fix_cycle: {r}/{len(row_list)}")
-        if r != 0:
-            bug_ft = row_list[r]
-
-            if bug_ft != "":
-                bug_ft_mins = dhm_to_minutes(bug_ft)
-                print(f"st_bug bug_ft: {bug_ft}")
+        if not is_redmin:
+            bug_ft_mins = dhm_to_minutes(kpi_row.bug_fix_cycle)
+            print(f"st_bug bug_fix_cycle: {kpi_row.bug_fix_cycle}")
         else:
             self.redmin_bug[severity] += 1
 
         print(f"st_bug bug_fix_cycle: {bug_ft_mins}")
         self.finish_time[severity] += bug_ft_mins
 
-        rop_t = super().get_reopen_time(row_list)
-        self.reopen_times += rop_t
-        self.reopened[severity] += rop_t
+        # reopen times
+        rop_t = kpi_row.reopen_times
+        if rop_t != "":
+            self.reopen_times += int(rop_t)
+            self.reopened[severity] += int(rop_t)
 
-        if st == 'REOPENED' or st == 'REOPEN':
+        if kpi_row.status == 'REOPEN':
             self.reopen_times += 1
             self.reopened[severity] += 1
 
@@ -591,7 +582,10 @@ class itemST_BUG(KPIItem):
             if self.diff_total[severity] == 0:
                 continue
             total = self.diff_total[severity] - self.redmin_bug[severity]
-            avg = int(self.finish_time[severity] / total)
+            if total != 0:
+                avg = int(self.finish_time[severity] / total)
+            else:
+                avg = 0
 
             pre_fix = " " * 4 + severity.title() + " ST_BUG Average Finish Time:"
             avg_finish_time += pre_fix + " {} \n".format(minutes_to_dhm(avg))
@@ -612,21 +606,22 @@ class KPIForOnePerson:
         self.prot_dev.reset()
 
     def parse_kpi_row(self, kpi_row):
-        work_type = kpi_row[row_attr_index["work_item_type"]]
-        id_v = kpi_row[row_attr_index["id"]]
-        st = kpi_row[row_attr_index["status"]]
+        if kpi_row.is_first_row:
+            return
+
+        work_type = kpi_row.work_item_type
         print("work type: ", work_type)
 
         self.oper_res = self.oper_result_dict['normal']
 
         if work_type in self.fae_bug.name_list:
-            self.fae_bug.do_proc_fae(id_v, st, work_type, kpi_row)
+            self.fae_bug.parser(kpi_row)
         elif work_type in self.prot_dev.name_list:
-            self.prot_dev.do_proc(id_v, st, work_type)
+            self.prot_dev.parser(kpi_row)
         elif work_type in self.st_bug.name_list:
-            self.st_bug.do_proc_req(id_v, st, work_type, kpi_row)
+            self.st_bug.parser(kpi_row)
         elif work_type in self.requirement.name_list:
-            self.requirement.do_proc_req(id_v, st, work_type, kpi_row)
+            self.requirement.parser(kpi_row)
         else:
             raise Exception(f"unknown work type: {work_type}")
 
@@ -656,27 +651,6 @@ class KPIForOnePerson:
         # self.report = ""
 
 
-def row_parser(row_list, first_row, members):
-    if first_row:
-        #init_row_index(row_list)
-        kpi_row.init_row_index(row_list)
-    else:
-        kpi_row.pre_proc(row_list)
-        name = kpi_row.get_name(row_list)
-        member = None
-        print(f"name: {name}")
-        for mb in members:
-            if mb.name_en.lower() == name:
-                member = mb
-                break
-        
-        if member is not None:
-            member.parse_kpi_row(kpi_row)
-            return member
-        else:
-            return None
-
-
 def kpi_process(r_path, csv_list, members):
     sep_kpi_fold = csv_list[0]
     sep_kpi_fold = sep_kpi_fold[sep_kpi_fold.find("_") + 1:sep_kpi_fold.rfind(".")]
@@ -698,10 +672,10 @@ def kpi_process(r_path, csv_list, members):
             for r_list in reader:
                 mb = kpi_row.pre_proc(r_list, members)
                 if mb is not None:
-                    # mb.parse_kpi_row(kpi_row)
+                    mb.kpi.parse_kpi_row(kpi_row)
                     kpi_row.save_kpi_row(mb)
                 
                 kpi_row.is_first_row = False
 
-    #for mb in members:
-    #    mb.kpi.kpi_summary()
+    for mb in members:
+        mb.kpi.kpi_summary()
