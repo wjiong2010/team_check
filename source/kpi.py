@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 def get_csv_filename(r, fn):
+    fn = fn.title()
     t_fn = fn.replace(" ", "_") + ".csv"
     return os.path.join(r, t_fn)
 
@@ -29,15 +30,27 @@ class KPIRow:
     def init_folder(self, r, name):
         self._path = r
         p = get_csv_filename(r, name)
+        print("exist file: " + p)
         if os.path.exists(p):
             os.remove(p)
             print("Clear exist file: " + p)
 
-    def get_kpi_row(self):
+    def get_kpi_row(self, op, head_line):
         """
         :return: the kpi row
         """
-        return [self.id, self.work_item_type, self.severity, self.title, self.priority, self.status, self.difficulty, self.person_in_charge, self.dead_line, self.complete_time, self.bug_fix_cycle, self.bug_fixed_duration, self.estimated_workinghours, self.registered_workinghours, self.rest_workinghours, self.project_name, self.creator, self.creation_time, self.reopen_times, self.reopen_duration, self.reopen_confirm_times, self.reopen_confirm_duration, self.state_detail, self.evaluating_duration, self.assigned_duration, self.assigned_times, self.pending_times, self.pending_duration]
+        if head_line:
+            final_row = ['评注']
+        else:
+            final_row = [op]
+
+        for attr in self.row_attribut_list:
+            if head_line:
+                final_row.append(attr["key_words"][0])
+                continue
+            _name = attr["name"]
+            exec("final_row.append(self." + _name + ")")
+        return final_row
     
     # ones
     # ID, 工作项类型, 严重程度, 标题, 优先级, 状态, Difficulty Degree, 负责人, 截止日期, 预估工时（小时）, 所属项目, 已登记工时（小时）, 剩余工时（小时）, 创建者, 创建时间, 
@@ -53,7 +66,6 @@ class KPIRow:
             _def  = attr["default_index"]
             try:
                 _index = row.index(_keys[0])
-                self.head_line.append(_keys[0])
             except ValueError:
                 print("error!!")
                 if len(_keys) > 1:
@@ -64,49 +76,55 @@ class KPIRow:
             self.row_index.update({_name: _index})
         
         print(self.row_index)
-        print(self.head_line)
     
-    def save_csv(self, row):
-        path = os.path.join(self._path, self.member_name + ".csv")
-        with open(path, 'a', encoding="utf-8-sig") as csv_f:
+    def save_csv(self, op):
+        csv_file = get_csv_filename(self._path, self.member_name)
+        if os.path.exists(csv_file):
+            _head_line = False
+            
+        else:
+            _head_line = True
+
+        row = self.get_kpi_row(op, _head_line)
+        print(f"final_row: {row}")
+
+        with open(csv_file, 'a', encoding="utf-8-sig") as csv_f:
             writer = csv.writer(csv_f, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-            if self.is_first_row:
-                print("create the first line for {}".format(csv_f))
-                writer.writerow(self.head_line)
             writer.writerow(row)
 
     def save_kpi_row(self, mb, format = "csv"):
-        final_row = [mb.kpi.oper_res]
-        final_row += self.get_kpi_row()
-        print(f"final_row: {final_row}")
         if format == "csv":
-            self.save_csv(final_row)
+            self.save_csv(mb.kpi.oper_res)
         else:
             print("save as text or push to database")
 
     def pre_proc(self, row_list, members):
-
-        print("pre_proc: {}".format(self.is_first_row))
         if self.is_first_row:
             self.init_row_index(row_list)
         else:
             # split the row into different items and save them to the corresponding parameters
-            print("sssss:   " + str(row_list))            
+            print("pre_proc:   " + str(row_list))
+            for attr in self.row_attribut_list:
+                _name = attr["name"]
+                _index = self.row_index[_name]
+                if -1 == _index:
+                    _tmp_v = ""
+                else:
+                    _tmp_v = row_list[_index]
+                print("name_index: {}, {}, {}".format(_name, _index, _tmp_v))
+                exec("self." + _name + " = _tmp_v")
 
             # get member from members by name
             self.member_name = self.get_name(row_list)
             member = None
-            print(f"name: {self.member_name}")
             for mb in members:
                 if mb.name_en.lower() == self.member_name:
                     member = mb
                     break
             
             if member is not None:
-                print(f"member {self.member_name} found")
                 return member
             else:
-                print(f"member {self.member_name} not found")
                 return None
 
     def __init__(self):
@@ -137,7 +155,7 @@ class KPIRow:
         self.assigned_duration = ""     
         self.assigned_times = ""        
         self.pending_times = ""         
-        self.pending_duration = ""      
+        self.pending_duration = ""
         self.row_attribut_list = [
             {"name": "id",                      "key_words": ['ID'],                            "default_index": 0},
             {"name": "work_item_type",          "key_words": ['工作项类型', '跟踪'],            "default_index": -1},
@@ -147,7 +165,7 @@ class KPIRow:
             {"name": "status",                  "key_words": ['状态'],                          "default_index": -1},
             {"name": "difficulty",              "key_words": ['Difficulty Degree'],             "default_index": -1},
             {"name": "person_in_charge",        "key_words": ['负责人', '指派给'],                  "default_index": -1},
-            {"name": "dead_line",               "key_words": ['计划完成日期','截止日期'],           "default_index": -1},
+            {"name": "dead_line",               "key_words": ['截止日期', '计划完成日期'],           "default_index": -1},
             {"name": "complete_time",           "key_words": ['实际完成时间', '结束日期'],          "default_index": -1},
             {"name": "bug_fix_cycle",           "key_words": ['缺陷修复周期'],                      "default_index": -1},
             {"name": "bug_fixed_duration",      "key_words": ['已修复-停留时间'],                   "default_index": -1},
@@ -168,7 +186,6 @@ class KPIRow:
             {"name": "pending_times",           "key_words": ['PENDING-停留次数'],                "default_index": -1},
             {"name": "pending_duration",        "key_words": ['PENDING-停留时间'],                "default_index": -1}
         ]
-        self.head_line = []
         self.row_index = {}
         self.is_first_row = True
         self.member_name = ""
@@ -657,7 +674,6 @@ def row_parser(row_list, first_row, members):
             member.parse_kpi_row(kpi_row)
             return member
         else:
-            print(f"member {name} not found")
             return None
 
 
