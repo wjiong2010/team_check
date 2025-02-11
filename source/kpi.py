@@ -79,17 +79,19 @@ class KPIRow:
     
     def save_csv(self, op):
         csv_file = get_csv_filename(self._path, self.member_name)
-        if os.path.exists(csv_file):
-            _head_line = False
-            
+        if not os.path.exists(csv_file):
+            # if the file does not exist, create a new file and write the head line
+            _head_line = self.get_kpi_row(op, True)
         else:
-            _head_line = True
+            _head_line = []
 
-        row = self.get_kpi_row(op, _head_line)
+        row = self.get_kpi_row(op, False)
         print(f"final_row: {row}")
 
         with open(csv_file, 'a', encoding="utf-8-sig") as csv_f:
             writer = csv.writer(csv_f, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            if len(_head_line) != 0:
+                writer.writerow(_head_line)
             writer.writerow(row)
 
     def save_kpi_row(self, mb, format = "csv"):
@@ -301,8 +303,6 @@ class KPIItem:
         return ts
 
     def do_status_count(self, st):
-        self.total += 1
-
         # remove the content in '（'
         i = st.find('（')
         if i != -1:
@@ -423,6 +423,9 @@ class itemREQUIREMENT(KPIItem):
         self.out_time = 0
 
     def parser(self, kpi_row):
+        # total count
+        self.total += 1
+
         # status count
         super().do_status_count(kpi_row.status)
         
@@ -500,6 +503,10 @@ class itemPROT_DEV(KPIItem):
         self.summary = " " * 4 + self.fix_pre + "null"
     
     def parser(self, kpi_row):
+        # total count
+        self.total += 1
+        
+        # status count
         super().do_status_count(kpi_row.status)
 
     def calcu_summary(self):
@@ -536,6 +543,9 @@ class itemST_BUG(KPIItem):
         self.diff_total = {"Critical": 0, "Major": 0, "Normal": 0}
 
     def parser(self, kpi_row):
+        # total count
+        self.total += 1
+
         # item type
         if kpi_row.work_item_type != "缺陷":
             is_redmin = True
