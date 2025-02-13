@@ -692,6 +692,8 @@ class KPIForOnePerson:
         self.prot_dev.reset()
 
     def parse_kpi_row(self, kpi_row):
+        if kpi_row.remark == "ignore":
+            return
         if kpi_row.is_first_row:
             return
 
