@@ -47,27 +47,12 @@ def code_review_process(r_path):
     software_develop_team.save_as_excel("cr_result", cr_xlsx)
 
 
-def get_kpi_csv_file_list(season):
-    '''
-    Get the KPI csv file list.
-    '''
-    _season_dict = {
-        "Q1": ["PMS_0101-0331.csv", "redmin_0101-0331.csv"],
-        "Q2": ["PMS_0401-0630.csv", "redmin_0401-0630.csv"],
-        "Q3": ["PMS_0701-0930.csv", "redmin_0701-0930.csv"],
-        "Q4": ["PMS_1001-1231.csv", "redmin_1001-1231.csv"]
-    }
-    
-    return _season_dict[season]
-
-
 def team_kpi_process(r_path, year, season, option, archive):
     '''
     Process the team KPI.
     '''
     kpi_path = os.path.join(r_path, season)
-    kpi_csv_file_list = get_kpi_csv_file_list(season)
-    kpi_process(kpi_path, kpi_csv_file_list, software_develop_team.members, option, archive)
+    kpi_process(kpi_path, year, season, software_develop_team.members, option, archive)
 
     if option == 'kpi' or option == 'kpi_analyze':
         output_file = os.path.join(kpi_path, year + season + "-KPI_Report.txt")

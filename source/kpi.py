@@ -8,12 +8,41 @@ from datetime import datetime
 
 
 def get_csv_filename(r, fn):
+    '''
+    Get the csv file name.
+    '''
     fn = fn.title()
     t_fn = fn.replace(" ", "_") + ".csv"
     return os.path.join(r, t_fn)
 
 
+def season_date(season):
+    '''
+    Get the start and end date of the season.
+    '''
+    _season_dict = {
+        "Q1": ["0101", "0331"],
+        "Q2": ["0401", "0630"],
+        "Q3": ["0701", "0930"],
+        "Q4": ["1001", "1231"]
+    }
+    
+    return _season_dict[season][0], _season_dict[season][1]
+
+
+def get_kpi_csv_file_list(season):
+    '''
+    Get the KPI csv file list.
+    '''
+    kpi_row.ss_start, kpi_row.ss_end = season_date(season)
+    
+    return ["PMS_" + kpi_row.ss_start + "-" + kpi_row.ss_end + ".csv", "redmin_" + kpi_row.ss_start + "-" + kpi_row.ss_end + ".csv"]
+
+
 class KPIRow:
+    '''
+    KPI row class.
+    '''
     def get_name(self, row_list):
         """
         :param row_list: pick up name from row_list, 
@@ -77,6 +106,9 @@ class KPIRow:
         print(self.row_index)
     
     def save_csv(self):
+        '''
+        Save the KPI row to csv file.
+        '''
         csv_file = get_csv_filename(self.path, self.member_name)
         if not os.path.exists(csv_file):
             # if the file does not exist, create a new file and write the head line
@@ -94,6 +126,9 @@ class KPIRow:
             writer.writerow(row)
 
     def save_kpi_row(self, mb, fmt = "csv"):
+        '''
+        Save the KPI row as given format.
+        '''
         if fmt == "csv":
             self.save_csv()
         else:
@@ -125,8 +160,31 @@ class KPIRow:
                 member = mb
                 break
         return member
+    
+    def case_valid_check(self):
+        """
+        If the status of a task record is only modified and there is no substantive change, ignore it
+        remark the ignored case as "ignore"
+        """
+        # if a case is finished before this season, ignore it        
+        if self.complete_time != "":
+            c = self.complete_time.split()
+            if c[0].find("-") != -1:
+                _time = c[0].split("-")
+            elif c[0].find("/") != -1:
+                _time = c[0].split("/")
+            else:
+                raise ValueError("Invalid date format")
+
+            c_time = "{:02d}{:02d}".format(int(_time[1]), int(_time[2]))
+            print("c_time: " + c_time + " y: " + _time[0] + " self.year: " + self.year)
+            if c_time < self.ss_start and _time[0] <= self.year:
+                self.remark = "ignore"
 
     def pre_proc(self, row_list, members):
+        '''
+        Pre-process the row list.
+        '''
         if self.is_first_row:
             self.init_row_index(row_list)
             return None
@@ -134,7 +192,10 @@ class KPIRow:
             # split the row into different items and save them to the corresponding parameters
             print("pre_proc:   " + str(row_list))
             self.split_row_value(row_list)
-
+            
+            # valid check, 
+            self.case_valid_check()
+            
             # get member from members by name
             self.member_name = self.get_name(row_list)
             return self.get_member_by_name(members)
@@ -204,6 +265,9 @@ class KPIRow:
         self.is_first_row = True
         self.member_name = ""
         self.path = ""
+        self.ss_start = ""
+        self.ss_end = ""
+        self.year = ""
 
 kpi_row = KPIRow()
 
@@ -727,14 +791,16 @@ def kpi_analyze_process(r_path, members, fmt):
         mb.kpi.kpi_summary()
 
 
-def kpi_process(r_path, csv_list, members, option, fmt):
+def kpi_process(kpi_path, year, season, members, option, fmt):
+    csv_list = get_kpi_csv_file_list(season)
+    kpi_row.year = year
     
     if option != "kpi_analyze":
-        kpi_folder_init(r_path, csv_list, members, True)
-        kpi_pre_process(r_path, csv_list, members, fmt)
+        kpi_folder_init(kpi_path, csv_list, members, True)
+        kpi_pre_process(kpi_path, csv_list, members, fmt)
 
     if option != "kpi_pre":
-        p = kpi_folder_init(r_path, csv_list, members)
+        p = kpi_folder_init(kpi_path, csv_list, members)
         if p == '':
             print("No kpi files for analyze.")
             return
