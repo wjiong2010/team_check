@@ -1,7 +1,10 @@
 import os
 import csv
 from datetime import datetime
+# from team import TeamMember
 
+# GROUP_APPLICATION = TeamMember.GROUP_APPLICATION
+#GROUP_SYSTEM = TeamMember.GROUP_SYSTEM
 
 
 def get_csv_filename(r, fn):
@@ -28,22 +31,18 @@ class KPIRow:
         return name
     
     def init_folder(self, r, name):
-        self._path = r
+        self.path = r
         p = get_csv_filename(r, name)
         print("exist file: " + p)
         if os.path.exists(p):
             os.remove(p)
             print("Clear exist file: " + p)
 
-    def get_kpi_row(self, op, head_line):
+    def get_kpi_row(self, head_line):
         """
         :return: the kpi row
         """
-        if head_line:
-            final_row = ['评注']
-        else:
-            final_row = [op]
-
+        final_row = []
         for attr in self.row_attribut_list:
             if head_line:
                 final_row.append(attr["key_words"][0])
@@ -77,15 +76,15 @@ class KPIRow:
         
         print(self.row_index)
     
-    def save_csv(self, op):
-        csv_file = get_csv_filename(self._path, self.member_name)
+    def save_csv(self):
+        csv_file = get_csv_filename(self.path, self.member_name)
         if not os.path.exists(csv_file):
             # if the file does not exist, create a new file and write the head line
-            _head_line = self.get_kpi_row(op, True)
+            _head_line = self.get_kpi_row(True)
         else:
             _head_line = []
 
-        row = self.get_kpi_row(op, False)
+        row = self.get_kpi_row(False)
         print(f"final_row: {row}")
 
         with open(csv_file, 'a', encoding="utf-8-sig") as csv_f:
@@ -94,42 +93,54 @@ class KPIRow:
                 writer.writerow(_head_line)
             writer.writerow(row)
 
-    def save_kpi_row(self, mb, format = "csv"):
-        if format == "csv":
-            self.save_csv(mb.kpi.oper_res)
+    def save_kpi_row(self, mb, fmt = "csv"):
+        if fmt == "csv":
+            self.save_csv()
         else:
             print("save as text or push to database")
+
+    def split_row_value(self, row_list):
+        """
+        :param row_list: the row list
+        :return: the value of each item in the row list
+        """
+        for attr in self.row_attribut_list:
+            _name = attr["name"]
+            _index = self.row_index[_name]
+            if -1 == _index:
+                _tmp_v = ""
+            else:
+                _tmp_v = row_list[_index]
+            print("name_index: {}, {}, {}".format(_name, _index, _tmp_v))
+            exec("self." + _name + " = _tmp_v")
+            
+    def get_member_by_name(self, members):
+        """
+        :param members: the members list
+        :return: the member object
+        """
+        member = None
+        for mb in members:
+            if mb.name_en.lower() == self.member_name:
+                member = mb
+                break
+        return member
 
     def pre_proc(self, row_list, members):
         if self.is_first_row:
             self.init_row_index(row_list)
+            return None
         else:
             # split the row into different items and save them to the corresponding parameters
             print("pre_proc:   " + str(row_list))
-            for attr in self.row_attribut_list:
-                _name = attr["name"]
-                _index = self.row_index[_name]
-                if -1 == _index:
-                    _tmp_v = ""
-                else:
-                    _tmp_v = row_list[_index]
-                print("name_index: {}, {}, {}".format(_name, _index, _tmp_v))
-                exec("self." + _name + " = _tmp_v")
+            self.split_row_value(row_list)
 
             # get member from members by name
             self.member_name = self.get_name(row_list)
-            member = None
-            for mb in members:
-                if mb.name_en.lower() == self.member_name:
-                    member = mb
-                    break
-            
-            if member is not None:
-                return member
-            else:
-                return None
+            return self.get_member_by_name(members)
 
     def __init__(self):
+        self.remark = ""
         self.id = ""                    
         self.work_item_type = ""        
         self.severity = ""              
@@ -159,6 +170,7 @@ class KPIRow:
         self.pending_times = ""         
         self.pending_duration = ""
         self.row_attribut_list = [
+            {"name": "remark",                  "key_words": ['评注'],                          "default_index": -1},
             {"name": "id",                      "key_words": ['ID'],                            "default_index": 0},
             {"name": "work_item_type",          "key_words": ['工作项类型', '跟踪'],            "default_index": -1},
             {"name": "severity",                "key_words": ['严重程度', 'Severity'],          "default_index": -1},
@@ -191,7 +203,7 @@ class KPIRow:
         self.row_index = {}
         self.is_first_row = True
         self.member_name = ""
-        self._path = ""
+        self.path = ""
 
 kpi_row = KPIRow()
 
@@ -622,7 +634,7 @@ class KPIForOnePerson:
         work_type = kpi_row.work_item_type
         print("work type: ", work_type)
 
-        self.oper_res = self.oper_result_dict['normal']
+        kpi_row.remark = self.oper_result_dict['normal']
 
         if work_type in self.fae_bug.name_list:
             self.fae_bug.parser(kpi_row)
@@ -657,19 +669,25 @@ class KPIForOnePerson:
         self.requirement = itemREQUIREMENT()
         self.prot_dev = itemPROT_DEV()
         self.st_bug = itemST_BUG()
-        self._path = ''
+        self.path = ''
         # self.report = ""
 
 
-def kpi_process(r_path, csv_list, members):
+def kpi_folder_init(r_path, csv_list, members, clear_folder = False):
     sep_kpi_fold = csv_list[0]
     sep_kpi_fold = sep_kpi_fold[sep_kpi_fold.find("_") + 1:sep_kpi_fold.rfind(".")]
     sep_kpi_fold = os.path.join(r_path, sep_kpi_fold)
     if not os.path.exists(sep_kpi_fold):
         os.makedirs(sep_kpi_fold)
-    else:
+        return ''
+    elif clear_folder:
         for mb in members:
             kpi_row.init_folder(sep_kpi_fold, mb.name_en)
+    
+    return sep_kpi_fold
+
+
+def kpi_pre_process(r_path, csv_list, members, fmt):
     
     for csv_file in csv_list:
         fpath = os.path.join(r_path, csv_file)
@@ -681,11 +699,43 @@ def kpi_process(r_path, csv_list, members):
             reader = csv.reader(csv_f)
             for r_list in reader:
                 mb = kpi_row.pre_proc(r_list, members)
-                if mb is not None:
-                    mb.kpi.parse_kpi_row(kpi_row)
-                    kpi_row.save_kpi_row(mb)
-                
-                kpi_row.is_first_row = False
+                if mb is None:
+                    kpi_row.is_first_row = False
+                    continue
+                kpi_row.save_kpi_row(mb, fmt)
 
+
+def kpi_analyze_process(r_path, members, fmt):
     for mb in members:
+        if mb.group != 'application_development_group': continue
+        csv_file = get_csv_filename(kpi_row.path, mb.name_en)
+        csv_file = os.path.join(r_path, csv_file)
+        
+        try:
+            csv_f = open(csv_file, 'r', encoding="utf-8-sig")
+        except FileNotFoundError:
+            print("File not found: " + csv_file)
+            continue
+
+        kpi_row.is_first_row = True
+        reader = csv.reader(csv_f)
+        for r_list in reader:
+            kpi_row.pre_proc(r_list, members)
+            mb.kpi.parse_kpi_row(kpi_row)
+            kpi_row.is_first_row = False
+        
         mb.kpi.kpi_summary()
+
+
+def kpi_process(r_path, csv_list, members, option, fmt):
+    
+    if option != "kpi_analyze":
+        kpi_folder_init(r_path, csv_list, members, True)
+        kpi_pre_process(r_path, csv_list, members, fmt)
+
+    if option != "kpi_pre":
+        p = kpi_folder_init(r_path, csv_list, members)
+        if p == '':
+            print("No kpi files for analyze.")
+            return
+        kpi_analyze_process(p, members, fmt)
