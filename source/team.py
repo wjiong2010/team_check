@@ -33,125 +33,128 @@ def kpi_head_text():
     return kpi_text
 
 
-class Team:
-    class Member:
-        def cr_result_in_excel(self, ws, r):
-            print(f"{str(r)} next line----------------------------")
-            ori_r = r
+class TeamMember:
+    def cr_result_in_excel(self, ws, r):
+        print(f"{str(r)} next line----------------------------")
+        ori_r = r
+        rc = f"A{r}"
+        print(f"{rc}")
+        ws[rc] = f"{self.name_cn}({self.name_en})".title()
+        mg_rc = f"A{r}:B{r}"
+        ws.merge_cells(mg_rc)
+        xl_format.set_cell(ws[rc], font=xl_format.cell_title_font)
+        rc = f"B{r}"
+        xl_format.set_cell(ws[rc], font=xl_format.cell_title_font)
+
+        for cr in self.cr_result:
+            r += 1
+            r0 = r
             rc = f"A{r}"
-            print(f"{rc}")
-            ws[rc] = f"{self.name_cn}({self.name_en})".title()
-            mg_rc = f"A{r}:B{r}"
-            ws.merge_cells(mg_rc)
-            xl_format.set_cell(ws[rc], font=xl_format.cell_title_font)
+            ws[rc] = cr.severity.upper()
+            print(f"{rc}, {cr.severity.upper()}")
+            xl_format.set_cell(ws[rc])
+
             rc = f"B{r}"
-            xl_format.set_cell(ws[rc], font=xl_format.cell_title_font)
+            lines = 0
+            rc_str = f"{cr.msg}"
+            lines += 1
+            if len(cr.msg) != len(cr.verbose):
+                rc_str += '\n'
+                rc_str += f"{cr.verbose}"
+                lines += len(cr.verbose)/Team().COL_B_WIDTH + 1
+                print("lines: " + str(lines))
+            ws[rc] = rc_str
+            xl_format.set_cell(ws[rc])
+            xl_format.set_row(ws, r, 15*lines + 10)
+            print(f"{rc}, {rc_str}, {cr.verbose}")
 
-            for cr in self.cr_result:
-                r += 1
-                r0 = r
-                rc = f"A{r}"
-                ws[rc] = cr.severity.upper()
-                print(f"{rc}, {cr.severity.upper()}")
-                xl_format.set_cell(ws[rc])
-
-                rc = f"B{r}"
-                lines = 0
-                rc_str = f"{cr.msg}"
+            r += 1
+            rc = f"B{r}"
+            rc_str = ''
+            lines = 0
+            for location in cr.locations:
+                if lines > 0:
+                    rc_str += '\n'
+                if len(cr.locations) == 1:
+                    rc_str += f"{cr.id}:"
+                else:
+                    rc_str += f"{location.info}:"
+                rc_str += '\n'
                 lines += 1
-                if len(cr.msg) != len(cr.verbose):
-                    rc_str += '\n'
-                    rc_str += f"{cr.verbose}"
-                    lines += len(cr.verbose)/Team().COL_B_WIDTH + 1
-                    print("lines: " + str(lines))
-                ws[rc] = rc_str
-                xl_format.set_cell(ws[rc])
-                xl_format.set_row(ws, r, 15*lines + 10)
-                print(f"{rc}, {rc_str}, {cr.verbose}")
+                l = f"{location.filename} line:{location.line}, col:{location.column}"
+                rc_str += l
+                lines += len(l)/Team().COL_B_WIDTH + 1
+            ws[rc] = rc_str
+            xl_format.set_cell(ws[rc])
+            xl_format.set_row(ws, r, 15*lines + 10)
+            print(f"{rc}, {ws[rc]}")
 
-                r += 1
-                rc = f"B{r}"
-                rc_str = ''
-                lines = 0
-                for location in cr.locations:
-                    if lines > 0:
-                        rc_str += '\n'
-                    if len(cr.locations) == 1:
-                        rc_str += f"{cr.id}:"
-                    else:
-                        rc_str += f"{location.info}:"
-                    rc_str += '\n'
-                    lines += 1
-                    l = f"{location.filename} line:{location.line}, col:{location.column}"
-                    rc_str += l
-                    lines += len(l)/Team().COL_B_WIDTH + 1
-                ws[rc] = rc_str
-                xl_format.set_cell(ws[rc])
-                xl_format.set_row(ws, r, 15*lines + 10)
-                print(f"{rc}, {ws[rc]}")
+            r += 1
+            rc = f"B{r}"
+            ws[rc] = f"修复结果："
+            xl_format.set_cell(ws[rc])
 
-                r += 1
-                rc = f"B{r}"
-                ws[rc] = f"修复结果："
-                xl_format.set_cell(ws[rc])
+            mg_rc = f"A{r0}:A{r}"
+            ws.merge_cells(mg_rc)
 
-                mg_rc = f"A{r0}:A{r}"
-                ws.merge_cells(mg_rc)
+        return r - ori_r
 
-            return r - ori_r
+    def cr_result_in_text(self):
+        s_text = ''
+        s_text += f"{self.name_cn}({self.name_en}):\n"
+        for cr in self.cr_result:
+            s_text += f"\t{cr.severity.upper()}:\n"
+            s_text += f"\t{cr.msg}\n"
+            if len(cr.msg) != len(cr.verbose):
+                s_text += f"\t{cr.verbose}\n"
+            for location in cr.locations:
+                if len(cr.locations) == 1:
+                    s_text += f"\t\t{cr.id}:\n"
+                else:
+                    s_text += f"\t\t{location.info}:\n"
+                s_text += f"\t\t{location.filename} line:{location.line}, col:{location.column}\n"
+            s_text += f"\t修复结果：\n"
+            s_text += '\n'
+        s_text += '\n\n'
 
-        def cr_result_in_text(self):
-            s_text = ''
-            s_text += f"{self.name_cn}({self.name_en}):\n"
-            for cr in self.cr_result:
-                s_text += f"\t{cr.severity.upper()}:\n"
-                s_text += f"\t{cr.msg}\n"
-                if len(cr.msg) != len(cr.verbose):
-                    s_text += f"\t{cr.verbose}\n"
-                for location in cr.locations:
-                    if len(cr.locations) == 1:
-                        s_text += f"\t\t{cr.id}:\n"
-                    else:
-                        s_text += f"\t\t{location.info}:\n"
-                    s_text += f"\t\t{location.filename} line:{location.line}, col:{location.column}\n"
-                s_text += f"\t修复结果：\n"
-                s_text += '\n'
-            s_text += '\n\n'
+        return s_text
 
-            return s_text
+    def kpi_in_text(self):
+        report_secondary_seperator = '''------------------------------------------------------------------------'''
+        report_summary = '''总结：'''
 
-        def kpi_in_text(self):
-            report_secondary_seperator = '''------------------------------------------------------------------------'''
-            report_summary = '''总结：'''
+        kpi_text = self.name_cn + "(" + self.name_en + "):" + '\n'
+        kpi_text += self.kpi.fae_bug.get_info() + '\n'
+        kpi_text += self.kpi.prot_dev.get_info() + '\n'
+        kpi_text += self.kpi.requirement.get_info() + '\n'
+        kpi_text += self.kpi.st_bug.get_info() + '\n\n'
 
-            kpi_text = self.name_cn + "(" + self.name_en + "):" + '\n'
-            kpi_text += self.kpi.fae_bug.get_info() + '\n'
-            kpi_text += self.kpi.prot_dev.get_info() + '\n'
-            kpi_text += self.kpi.requirement.get_info() + '\n'
-            kpi_text += self.kpi.st_bug.get_info() + '\n\n'
+        kpi_text += report_summary + '\n'
+        kpi_text += "\tWorkload:" + '\n'
+        kpi_text += self.kpi.fae_bug.summary + '\n'
+        kpi_text += self.kpi.requirement.summary + '\n'
+        kpi_text += self.kpi.st_bug.summary + '\n'
+        kpi_text += self.kpi.prot_dev.summary + '\n\n'
 
-            kpi_text += report_summary + '\n'
-            kpi_text += "\tWorkload:" + '\n'
-            kpi_text += self.kpi.fae_bug.summary + '\n'
-            kpi_text += self.kpi.requirement.summary + '\n'
-            kpi_text += self.kpi.st_bug.summary + '\n'
-            kpi_text += self.kpi.prot_dev.summary + '\n\n'
+        kpi_text += report_secondary_seperator + '\n'
 
-            kpi_text += report_secondary_seperator + '\n'
+        return kpi_text
 
-            return kpi_text
+    def __init__(self):
+        self.GROUP_SYSTEM = 'system_development_group'
+        self.GROUP_APPLICATION = 'application_development_group'
+        self.name_en = ''
+        self.name_cn = ''
+        self.group = ''  # 'application_development_group' or 'system_development_group'
+        self.work_modules = []
+        self.work_apps = []
+        self.work_gl_apps = []
+        self.work_pro_apps = []
+        self.cr_result = []
+        self.kpi = KPIForOnePerson(self.name_en, self.name_cn)
 
-        def __init__(self):
-            self.name_en = ''
-            self.name_cn = ''
-            self.group = ''  # 'application' or 'system'
-            self.work_modules = []
-            self.work_apps = []
-            self.work_gl_apps = []
-            self.work_pro_apps = []
-            self.cr_result = []
-            self.kpi = KPIForOnePerson(self.name_en, self.name_cn)
 
+class Team:
     def save_as_excel(self, select, excel):
         app_r = 1
         sys_r = 1
@@ -167,10 +170,10 @@ class Team:
 
         for mb in self.members:
             if 'cr_result' == select:
-                if mb.group == 'application_development_group':
+                if mb.group == mb.GROUP_APPLICATION:
                     app_r += mb.cr_result_in_excel(ws_app, app_r)
                     app_r += 1
-                if mb.group == 'system_development_group':
+                if mb.group == mb.GROUP_SYSTEM:
                     sys_r += mb.cr_result_in_excel(ws_sys, sys_r)
                     sys_r += 1
 
@@ -205,7 +208,7 @@ class Team:
         for subNode in node.childNodes:
             if CR_ELEMENT_NODE == subNode.nodeType:
                 if 'developer' == subNode.nodeName:
-                    m = self.Member()
+                    m = TeamMember()
                     m.name_en = subNode.getAttribute('name_en')
                     m.name_cn = subNode.getAttribute('name_cn')
                     m.group = node.nodeName
