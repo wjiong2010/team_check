@@ -210,9 +210,12 @@ class KPIRow:
         self.status = ""                
         self.difficulty = ""            
         self.person_in_charge = ""      
+        self.planned_start_date = ""      
         self.dead_line = ""             
+        self.planned_finish_date = ""             
         self.complete_time = ""         
         self.bug_fix_cycle = ""         
+        self.iteration = ""         
         self.bug_fixed_duration = ""    
         self.estimated_workinghours = ""
         self.registered_workinghours = ""
@@ -226,10 +229,15 @@ class KPIRow:
         self.reopen_confirm_duration = ""
         self.state_detail = ""          
         self.evaluating_duration = ""   
+        self.evaluating_times = ""   
         self.assigned_duration = ""     
         self.assigned_times = ""        
         self.pending_times = ""         
         self.pending_duration = ""
+        self.pending_times = ""         
+        self.wait_feedback_times = ""
+        self.wait_feedback_duration = ""         
+        self.wait_release_duration = ""
         self.row_attribut_list = [
             {"name": "remark",                  "key_words": ['评注'],                          "default_index": -1},
             {"name": "id",                      "key_words": ['ID'],                            "default_index": 0},
@@ -240,9 +248,12 @@ class KPIRow:
             {"name": "status",                  "key_words": ['状态'],                          "default_index": -1},
             {"name": "difficulty",              "key_words": ['Difficulty Degree'],             "default_index": -1},
             {"name": "person_in_charge",        "key_words": ['负责人', '指派给'],                  "default_index": -1},
-            {"name": "dead_line",               "key_words": ['截止日期', '计划完成日期'],           "default_index": -1},
+            {"name": "planned_start_date",      "key_words": ['计划开始日期'],                      "default_index": -1},
+            {"name": "dead_line",               "key_words": ['截止日期'],                          "default_index": -1},
+            {"name": "planned_finish_date",     "key_words": ['计划完成日期'],                      "default_index": -1},
             {"name": "complete_time",           "key_words": ['实际完成时间', '结束日期'],          "default_index": -1},
             {"name": "bug_fix_cycle",           "key_words": ['缺陷修复周期'],                      "default_index": -1},
+            {"name": "iteration",               "key_words": ['所属迭代'],                        "default_index": -1},
             {"name": "bug_fixed_duration",      "key_words": ['已修复-停留时间'],                   "default_index": -1},
             {"name": "estimated_workinghours",  "key_words": ['预估工时（小时）', '预估工时统计'],   "default_index": -1},
             {"name": "registered_workinghours", "key_words": ['已登记工时（小时）', '耗时'],        "default_index": -1},
@@ -256,10 +267,15 @@ class KPIRow:
             {"name": "reopen_confirm_duration", "key_words": ['REOPEN_CONFIRM-停留时间'],             "default_index": -1},
             {"name": "state_detail",            "key_words": ['State Details'],                     "default_index": -1},
             {"name": "evaluating_duration",     "key_words": ['EVALUATING-停留时间'],             "default_index": -1},
+            {"name": "evaluating_times",        "key_words": ['EVALUATING-停留次数'],             "default_index": -1},
             {"name": "assigned_duration",       "key_words": ['ASSIGNED-停留时间'],                 "default_index": -1},
             {"name": "assigned_times",          "key_words": ['ASSIGNED-停留次数'],                "default_index": -1},
+            {"name": "pending_duration",        "key_words": ['PENDING-停留时间'],                "default_index": -1},
             {"name": "pending_times",           "key_words": ['PENDING-停留次数'],                "default_index": -1},
-            {"name": "pending_duration",        "key_words": ['PENDING-停留时间'],                "default_index": -1}
+            {"name": "wait_feedback_duration",  "key_words": ['WAIT_FEEDBACK-停留时间'],                "default_index": -1},
+            {"name": "wait_feedback_times",     "key_words": ['WAIT_FEEDBACK-停留次数'],                "default_index": -1},
+            {"name": "wait_release_duration",   "key_words": ['WAIT_RELEASE-停留时间'],                "default_index": -1},
+            {"name": "wait_release_times",      "key_words": ['WAIT_RELEASE-停留次数'],                "default_index": -1},
         ]
         self.row_index = {}
         self.is_first_row = True
@@ -504,7 +520,7 @@ class itemREQUIREMENT(KPIItem):
 
         # status count
         super().do_status_count(kpi_row.status)
-        
+
         # reopen times
         rop_t = kpi_row.reopen_times
         print(f"requirement rop_t: {rop_t}")
@@ -530,23 +546,26 @@ class itemREQUIREMENT(KPIItem):
                 self.out_time += 1
             else:
                 self.in_time += 1
-        # for requirement without deadline, consider it as out time
         elif len(dd_line) == 0:
+            # for requirement without deadline, consider it as out time
             self.out_time += 1
 
     def calcu_summary(self):
+
+        # COMPLETE rate
         rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "关闭", "WAIT_FEEDBACK", "NO_RESPONSE"]
         self.summary = super().rate_calculater(rt_list, self.fix_pre) + "\n"
         print(f"requirement total complete: {self.total_complete}/{self.total}")
 
         # COMPLETE IN TIME
         # rate of complete in time = in_time/total_complete x 100%
-        if self.in_time == 0:
+        if self.in_time == 0 or self.total_complete == 0:
             self.summary += "    REQUIREMENT complete in time: 0"
         else:
             rate = "{:.1f}%".format(float(self.in_time / self.total_complete) * 100.0)
             self.summary += "    REQUIREMENT complete in time({}/{}): {}".format(self.in_time, self.total_complete, rate)
         self.summary += "\n"
+        
         # "REOPEN"
         # reopen率 = 总reopen次数/REQUIREMENT总数 x 100%
         self.summary += super().rate_calculater([], self.reopen_pre, self.reopen_times) + "\n"
@@ -758,6 +777,10 @@ def kpi_pre_process(r_path, csv_list, members, fmt):
     for csv_file in csv_list:
         fpath = os.path.join(r_path, csv_file)
         print(f"fpath: {fpath}, fn: {csv_file}")
+        
+        if not os.path.exists(fpath):
+            print("File not found: " + fpath)
+            continue
 
         with open(fpath, 'r', encoding="utf-8-sig") as csv_f:
             # set the first row as True when open an new file
@@ -789,8 +812,14 @@ def kpi_analyze_process(r_path, members, fmt):
             kpi_row.pre_proc(r_list, members)
             mb.kpi.parse_kpi_row(kpi_row)
             kpi_row.is_first_row = False
-        
+
         mb.kpi.kpi_summary()
+        
+        csv_f.close()
+        if csv_f.closed:
+            print("File closed: " + csv_file)
+        else:
+            print("Failed to closed: " + csv_file)
 
 
 def kpi_process(kpi_path, year, season, members, option, fmt):
