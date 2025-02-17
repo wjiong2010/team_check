@@ -538,6 +538,7 @@ class itemREQUIREMENT(KPIItem):
         self.diff_minutes = 0   # total time consumed for all requirements
         self.in_time = 0
         self.out_time = 0
+        self.out_time_list = []
         self._ddl = "" # deadline or planned finish date
 
     def _parser_in_out_time(self, deadline, plan_fin_date, complete_time):
@@ -550,10 +551,10 @@ class itemREQUIREMENT(KPIItem):
 
         # deadline and planned finish date
         print(f"requirement dd_line: {deadline}, pf: {plan_fin_date}")
-        if len(plan_fin_date) != 0:
-            self._ddl = plan_fin_date
-        elif len(deadline) != 0:
+        if len(deadline) != 0:
             self._ddl = deadline
+        elif len(plan_fin_date) != 0:
+            self._ddl = plan_fin_date
         else:
             self._ddl = ""
             # for requirement without deadline, consider it as out time
@@ -563,6 +564,7 @@ class itemREQUIREMENT(KPIItem):
         if len(self._ddl) != 0 and len(complete_time) != 0:
             if date_diff(complete_time, self._ddl, "days") < 0:
                 self.out_time += 1
+                self.out_time_list.append(kpi_row.id)
             else:
                 self.in_time += 1
 
@@ -612,6 +614,7 @@ class itemREQUIREMENT(KPIItem):
         else:
             rate = "{:.1f}%".format(float(self.in_time / self.total_complete) * 100.0)
             self.summary += "    REQUIREMENT complete in time({}/{}): {}".format(self.in_time, self.total_complete, rate)
+        self.summary += "  " + str(self.out_time_list)
         self.summary += "\n"
         
         # "REOPEN"
