@@ -288,16 +288,40 @@ class KPIRow:
 kpi_row = KPIRow()
 
 
-def date_diff_days(start_date, end_date):
-    date_format = "%Y-%m-%d"
+def date_diff(start_date, end_date, date_type = "days"):
+    '''
+    Calculate the difference between two dates.
+    start_date: 2025/2/10  09:10:32
+    end_date: 2024/3/29  00:00:00
+    '''
+    assert(len(start_date) != 0)
+    assert(len(end_date) != 0)
+    
+    # format the date, convert the date from YYYY/MM/DD to YYYY-MM-DD
+    date_format = "%Y-%m-%d %H:%M:%S"
     f_start = start_date.replace("/","-")
-    start_date = datetime.strptime(f_start, date_format)
     f_end = end_date.replace("/","-")
+    
+    if len(f_start) <= 10:
+        f_start += " 00:00:00"
+    if len(f_end) <= 10:
+        f_end += " 00:00:00"
+    print("f_start:{} f_end:{}".format(f_start, f_end))
+
+    start_date = datetime.strptime(f_start, date_format)
     end_date = datetime.strptime(f_end, date_format)
 
-    # 计算相差天数
+    # calculate the difference between two dates
     delta = end_date - start_date
-    return delta.days
+    
+    if date_type == "days":
+        return delta.days
+    elif date_type == "hours":
+        return delta.days * 24 + delta.seconds // 3600
+    elif date_type == "minutes":
+        return delta.days * 24 * 60 + delta.seconds // 60
+    else: # seconds
+        return delta.seconds
 
 
 def minutes_to_dhm(minutes):
@@ -488,6 +512,7 @@ class itemREQUIREMENT(KPIItem):
     def __init__(self):
         super().__init__()
         self.name_list = ["REQUIREMENT", "需求"]
+        self.job_done_flags = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "关闭", "NO_RESPONSE"]
         self.status_counter = {
             "RESOLVED": 0,
             "REOPEN": 0,
@@ -510,9 +535,49 @@ class itemREQUIREMENT(KPIItem):
         self.summary = " " * 4 + self.fix_pre + "null\n"
         self.summary += " " * 4 + self.reopen_pre + "null"
         self.reopen_times = 0
-        self.diff_days = 0
+        self.diff_minutes = 0   # total time consumed for all requirements
         self.in_time = 0
         self.out_time = 0
+        self._ddl = "" # deadline or planned finish date
+
+    def _parser_in_out_time(self, deadline, plan_fin_date, complete_time):
+        # complete time
+        if complete_time != "":
+            l = complete_time.split()
+            print(f"complete time: {l}, {complete_time}")
+            complete_time = "".join(l[0])
+        print(f"requirement complete_time: {complete_time}")
+
+        # deadline and planned finish date
+        print(f"requirement dd_line: {deadline}, pf: {plan_fin_date}")
+        if len(plan_fin_date) != 0:
+            self._ddl = plan_fin_date
+        elif len(deadline) != 0:
+            self._ddl = deadline
+        else:
+            self._ddl = ""
+            # for requirement without deadline, consider it as out time
+            self.out_time += 1
+
+        # _diff_days = deadline - complete_time, < 0 timeout. >=0: in time
+        if len(self._ddl) != 0 and len(complete_time) != 0:
+            if date_diff(complete_time, self._ddl, "days") < 0:
+                self.out_time += 1
+            else:
+                self.in_time += 1
+
+    def _parser_time_consumed(self, kpi_row):
+        '''
+        Calculate the time consumed for all requirements.
+        '''
+        print(f"requirement status: {kpi_row.status}, _ddl: {self._ddl}")
+        if self._ddl == "" or kpi_row.status not in self.job_done_flags:
+            return
+
+        # date difference between creation_time and _ddl
+        assert len(kpi_row.creation_time) != 0
+        self.diff_minutes += date_diff(kpi_row.creation_time, self._ddl, "minutes")
+        print(f"requirement diff_minutes: {self.diff_minutes}")
 
     def parser(self, kpi_row):
         # total count
@@ -527,34 +592,17 @@ class itemREQUIREMENT(KPIItem):
         if len(rop_t) != 0:
             self.reopen_times += int(rop_t)
 
-        # complete in time
-        cmp_t = kpi_row.complete_time
-        if cmp_t != "":
-            l = cmp_t.split()
-            print(f"complete time: {l}, {cmp_t}")
-            cmp_t = "".join(l[0])
-        print(f"requirement cmp_t: {cmp_t}")
-
-        # deadline
-        dd_line = kpi_row.dead_line
-        print(f"requirement dd_line: {dd_line}")
-
-        # diff_days = deadline - complete_time, < 0 timeout. >=0: in time
-        if len(dd_line) != 0 and len(cmp_t) != 0:
-            self.diff_days = date_diff_days(cmp_t, dd_line)
-            if self.diff_days < 0:
-                self.out_time += 1
-            else:
-                self.in_time += 1
-        elif len(dd_line) == 0:
-            # for requirement without deadline, consider it as out time
-            self.out_time += 1
+        # calculate the in time or out time by deadline, planned finish date and complete time
+        self._parser_in_out_time(kpi_row.dead_line, kpi_row.planned_finish_date, kpi_row.complete_time)
+        
+        # time consume
+        self._parser_time_consumed(kpi_row)
+            
 
     def calcu_summary(self):
 
         # COMPLETE rate
-        rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "关闭", "WAIT_FEEDBACK", "NO_RESPONSE"]
-        self.summary = super().rate_calculater(rt_list, self.fix_pre) + "\n"
+        self.summary = super().rate_calculater(self.job_done_flags, self.fix_pre) + "\n"
         print(f"requirement total complete: {self.total_complete}/{self.total}")
 
         # COMPLETE IN TIME
@@ -574,6 +622,11 @@ class itemREQUIREMENT(KPIItem):
             self.summary += "    REQUIREMENT Reopened Times: 0"
         else:
             self.summary += "    REQUIREMENT Reopened Times: " + str(self.reopen_times)
+            
+        # time consumed
+        aver_diff_mins = 0 if self.total == 0 or self.diff_minutes == 0 else int(self.diff_minutes / self.total)
+        _time_consumed = minutes_to_dhm(aver_diff_mins)
+        self.summary += "\n    REQUIREMENT Time Consumed in Average: " + _time_consumed
 
 
 class itemPROT_DEV(KPIItem):
