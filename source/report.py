@@ -5,23 +5,23 @@ import datetime
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
-replace_list = [
-    {'<<Name>>': '王炯'},
-    {'<<Year>>': '2024'},
-    {'<<Season>>': 'Q4'},
-    {'<<S_Month>>': '222'},
-    {'<<S_Day>>': ''},
-    {'<<E_Month>>': ''},
-    {'<<E_Day>>': ''},
-    {'<<P_Score>>': ''},
-    {'<<M_Score>>': ''},
-    {'<<Key_Score>>': '0'},
-    {'<<Total_Score>>': ''},
-    {'<<Rank>>': ''},
-    {'<<Level>>': ''},
-    {'<<Comment>>': ''},
-    {'<<Opinion>>': ''}
-]
+replace_list = {
+    '<<Name>>': '王炯',
+    '<<Year>>': '2024',
+    '<<Season>>': 'Q4',
+    '<<S_Month>>': '222',
+    '<<S_Day>>': '',
+    '<<E_Month>>': '',
+    '<<E_Day>>': '',
+    '<<P_Score>>': '',
+    '<<M_Score>>': '',
+    '<<Key_Score>>': '0',
+    '<<Total_Score>>': '',
+    '<<Rank>>': '',
+    '<<Level>>': '',
+    '<<Comment>>': '',
+    '<<Opinion>>': ''
+}
 
 
 def update_doc_info(document):
@@ -29,9 +29,8 @@ def update_doc_info(document):
     Update the document information.
     '''
     _temp_list = []
-    for rp_dict in replace_list:
-        for i,j in rp_dict.items():
-            _temp_list.append(tuple([i, j]))
+    for i,j in replace_list.items():
+        _temp_list.append(tuple([i, j]))
     print(_temp_list)
     
     document.core_properties.author = "John Wang"
