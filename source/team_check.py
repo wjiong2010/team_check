@@ -4,6 +4,7 @@ from kpi import kpi_process
 from team import Team
 from codereview import cr_parse_result
 from database import data_base as db
+from report import build_docx
 
 
 software_develop_team = Team()
@@ -23,6 +24,7 @@ def args_init():
     parser.add_argument('-op', '--options', type=str, choices=['cr','kpi_pre','kpi_analyze','kpi'], 
                         help='There are 4 options: cr, kpi_pre, kpi_analyze, kpi' +
                         'cr: code review, kpi_pre: KPI preprocess, kpi_analyze: KPI analyze, kpi: Full KPI process')
+    parser.add_argument('-rel', '--release', type=str, default='docx', help='Build the KPI Interview Form.')
     args = parser.parse_args()
     return args
 
@@ -64,7 +66,7 @@ def main():
     Main function for teamcheck.
     '''
     args = args_init()
-    print(f"season: {args.season}, cr_week: {args.cr_date}, year: {args.year}, options: {args.options}")
+    print(f"season: {args.season}, cr_week: {args.cr_date}, year: {args.year}, options: {args.options}, archive: {args.archive}, release: {args.release}")
     root_path = get_root_path()
     
     software_develop_team.init_members()
@@ -88,6 +90,8 @@ def main():
         case _: 
             print("Please input the correct options: cr, kpi_pre, kpi_analyze, kpi")
 
+    if args.release == 'docx':
+        build_docx()
 
 # 外部调用的时候不执行
 if __name__ == '__main__':
