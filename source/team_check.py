@@ -21,8 +21,8 @@ def args_init():
     parser.add_argument('--cr_date', type=str, default='0000', help='date of code review, formate: mmdd')
     parser.add_argument('-y', '--year', type=str, default='0000', help='The year of the KPI season')
     parser.add_argument('-a', '--archive', type=str, choices=['csv', 'database'], default='csv', help='How to archive the data')
-    parser.add_argument('-op', '--options', type=str, choices=['cr','kpi_pre','kpi_analyze','kpi'], 
-                        help='There are 4 options: cr, kpi_pre, kpi_analyze, kpi' +
+    parser.add_argument('-t', '--type', type=str, choices=['cr','kpi_pre','kpi_analyze','kpi'], 
+                        help='There are 4 types: cr, kpi_pre, kpi_analyze, kpi' +
                         'cr: code review, kpi_pre: KPI preprocess, kpi_analyze: KPI analyze, kpi: Full KPI process')
     parser.add_argument('-rel', '--release', type=str, default='docx', help='Build the KPI Interview Form.')
     args = parser.parse_args()
@@ -49,49 +49,55 @@ def code_review_process(r_path):
     software_develop_team.save_as_excel("cr_result", cr_xlsx)
 
 
-def team_kpi_process(r_path, year, season, option, archive):
+def team_kpi_process(kpi_path, year, season, option, archive):
     '''
     Process the team KPI.
     '''
-    kpi_path = os.path.join(r_path, season)
     kpi_process(kpi_path, year, season, software_develop_team.members, option, archive)
 
     if option == 'kpi' or option == 'kpi_analyze':
         output_file = os.path.join(kpi_path, year + season + "-KPI_Report.txt")
         software_develop_team.save_as_text("kpi", output_file)
 
-    
+
+
+
 def main():
     '''
     Main function for teamcheck.
     '''
     args = args_init()
-    print(f"season: {args.season}, cr_week: {args.cr_date}, year: {args.year}, options: {args.options}, archive: {args.archive}, release: {args.release}")
+    print(f"season: {args.season}, cr_week: {args.cr_date}, year: {args.year}, type: {args.type}, archive: {args.archive}, release: {args.release}")
     root_path = get_root_path()
     
     software_develop_team.init_members()
     # db.init_prot_info()
     # db.mysql_proc("team_members", software_develop_team.member_db_list)
     # software_develop_team.print_members()
-    
-    match args.options:
+    work_type = ''
+    work_path = ''
+    match args.type:
         case 'cr':
             if args.cr_date == '0000':
                 print("Please input the cr_date for code review")
             else:
+                work_type = 'cr'
                 code_review_process(root_path)
 
         case 'kpi_pre' | 'kpi_analyze' | 'kpi':
             if args.season == None or args.year == '0000':
                 print("Please input the season and year for KPI")
             else:
-                team_kpi_process(root_path, args.year, args.season, args.options, args.archive)
+                work_type = 'kpi'
+                work_path = os.path.join(root_path, args.season)
+                team_kpi_process(work_path, args.year, args.season, args.type, args.archive)
 
         case _: 
-            print("Please input the correct options: cr, kpi_pre, kpi_analyze, kpi")
+            print("Please input the correct type: cr, kpi_pre, kpi_analyze, kpi")
 
     if args.release == 'docx':
-        build_docx()
+        if work_type == 'kpi':
+            build_docx(software_develop_team.members, args.year, args.season, work_path, "kpi_interview_form_template.docx")
 
 # 外部调用的时候不执行
 if __name__ == '__main__':

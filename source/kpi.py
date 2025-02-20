@@ -1,7 +1,6 @@
 import os
 import csv
 from datetime import datetime
-# from team import TeamMember
 
 # GROUP_APPLICATION = TeamMember.GROUP_APPLICATION
 #GROUP_SYSTEM = TeamMember.GROUP_SYSTEM

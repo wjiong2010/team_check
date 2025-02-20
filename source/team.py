@@ -152,6 +152,14 @@ class TeamMember:
         self.work_pro_apps = []
         self.cr_result = []
         self.kpi = KPIForOnePerson(self.name_en, self.name_cn)
+        self.p_score = 0.0
+        self.m_score = 0.0
+        self.key_score = 0.0
+        self.total_score = 0.0
+        self.rank = 0   # 排名
+        self.level = ''     # 等级
+        self.comment = ''   # 评语
+        self.opinion = ''   # 意见
 
 
 class Team:

@@ -1,7 +1,5 @@
 from docx import Document
-from team import Team
-from team import TeamMember
-import datetime
+import datetime, os
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
@@ -67,22 +65,57 @@ def update_doc_info(document):
                 print(f"Replace {tl[0]} with {tl[1]}")
 
 
-def build_docx(doc_path = "kpi_interview_form_template.docx"):
+def folder_init(p_folder):
+    '''
+    Initialize the folder.
+    if not exist, create it.
+    if exist, clean the files in it.
+    '''
+    if not os.path.exists(p_folder):
+        os.makedirs(p_folder)
+    else:
+        for root, dirs, files in os.walk(p_folder):
+            for file in files:
+                os.remove(os.path.join(root, file))
+
+def kpi_interview_form_generator(doc, year, season, rel_path, members):
+    '''
+    Generate the KPI Interview Form.
+    2024年三季度绩效考核面谈表-曹政
+    '''
+    season_cvt = {
+        'Q1': '一季度',
+        'Q2': '二季度',
+        'Q3': '三季度',
+        'Q4': '四季度'
+    }
+    file_name_prefix = "{}年{}绩效考核面谈表-".format(year, season_cvt[season])
+    _rpath = os.path.join(rel_path, "interview_form")
+    folder_init(_rpath)
+    sys_path = os.path.join(_rpath, "sys")
+    folder_init(sys_path)
+    app_path = os.path.join(_rpath, "app")
+    folder_init(app_path)
+    
+    for member in members:
+        _fname = file_name_prefix + member.name_cn + ".docx"
+        if member.group == member.GROUP_SYSTEM:
+            _rp = os.path.join(sys_path, _fname)
+        else:
+            _rp = os.path.join(app_path, _fname)
+        print(_rp)
+        try:
+            update_doc_info(doc)
+            doc.save(_rp)
+        finally:
+            if doc:
+                doc.save(_rp)
+
+def build_docx(members, year, season,  rel_path, doc_path = "kpi_interview_form_template.docx"):
     '''     
     Build the KPI Interview Form.
     '''
     doc = Document(doc_path)  # Create a document object.
+    kpi_interview_form_generator(doc, year, season, rel_path, members)  # Generate the KPI Interview Form.
 
-    try:
-        update_doc_info(doc)
-
-        # The following steps are just for testing. They can be commented.
-        # doc.add_paragraph('Revision History', style="Queclink Title 01")
-        # doc.add_paragraph('Introduction', style="Queclink Title 01")
-        # p = doc.add_paragraph('This is a test text to use the original style.', style="Queclink text paragraph")
-        # doc.add_paragraph('Reference', style="Queclink Title 02")
-
-        doc.save("new_kpi_template.docx")
-    finally:
-        if doc:
-            doc.save("new_kpi_template.docx")
+    
