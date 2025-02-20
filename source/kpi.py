@@ -1,6 +1,13 @@
 import os
 import csv
 from datetime import datetime
+from team_check_util import season_date
+from team_check_util import date_diff
+from team_check_util import minutes_to_dhm
+from team_check_util import dhm_to_minutes
+from team_check_util import is_chinese
+import xlrd
+import xlwt
 
 # GROUP_APPLICATION = TeamMember.GROUP_APPLICATION
 #GROUP_SYSTEM = TeamMember.GROUP_SYSTEM
@@ -13,20 +20,6 @@ def get_csv_filename(r, fn):
     fn = fn.title()
     t_fn = fn.replace(" ", "_") + ".csv"
     return os.path.join(r, t_fn)
-
-
-def season_date(season):
-    '''
-    Get the start and end date of the season.
-    '''
-    _season_dict = {
-        "Q1": ["0101", "0331"],
-        "Q2": ["0401", "0630"],
-        "Q3": ["0701", "0930"],
-        "Q4": ["1001", "1231"]
-    }
-    
-    return _season_dict[season][0], _season_dict[season][1]
 
 
 def get_kpi_csv_file_list(season):
@@ -148,16 +141,26 @@ class KPIRow:
             print("name_index: {}, {}, {}".format(_name, _index, _tmp_v))
             exec("self." + _name + " = _tmp_v")
             
-    def get_member_by_name(self, members):
+    def get_member_by_name(self, members, _name):
         """
         :param members: the members list
         :return: the member object
         """
+        print("name: " + _name)
+        if is_chinese(_name):
+            _en = False
+        else:
+            _en = True
+        
         member = None
         for mb in members:
-            if mb.name_en.lower() == self.member_name:
+            if _en and mb.name_en.lower() == _name.lower():
                 member = mb
                 break
+            if not _en and mb.name_cn.encode() == _name.encode():
+                member = mb
+                break
+
         return member
     
     def case_valid_check(self):
@@ -197,7 +200,7 @@ class KPIRow:
             
             # get member from members by name
             self.member_name = self.get_name(row_list)
-            return self.get_member_by_name(members)
+            return self.get_member_by_name(members, self.member_name)
 
     def __init__(self):
         self.remark = ""
@@ -285,106 +288,6 @@ class KPIRow:
         self.year = ""
 
 kpi_row = KPIRow()
-
-
-def date_diff(start_date, end_date, date_type = "days"):
-    '''
-    Calculate the difference between two dates.
-    start_date: 2025/2/10  09:10:32
-    end_date: 2024/3/29  00:00:00
-    '''
-    assert(len(start_date) != 0)
-    assert(len(end_date) != 0)
-    
-    # format the date, convert the date from YYYY/MM/DD to YYYY-MM-DD
-    date_format = "%Y-%m-%d %H:%M:%S"
-    f_start = start_date.replace("/","-")
-    f_end = end_date.replace("/","-")
-    
-    if len(f_start) <= 10:
-        f_start += " 00:00:00"
-    if len(f_end) <= 10:
-        f_end += " 00:00:00"
-    print("f_start:{} f_end:{}".format(f_start, f_end))
-
-    start_date = datetime.strptime(f_start, date_format)
-    end_date = datetime.strptime(f_end, date_format)
-
-    # calculate the difference between two dates
-    delta = end_date - start_date
-    
-    if date_type == "days":
-        return delta.days
-    elif date_type == "hours":
-        return delta.days * 24 + delta.seconds // 3600
-    elif date_type == "minutes":
-        return delta.days * 24 * 60 + delta.seconds // 60
-    else: # seconds
-        return delta.seconds
-
-
-def minutes_to_dhm(minutes):
-    """
-    :param minutes:
-    :return: 2 天18 小时1 分钟
-            3 小时44 分钟
-            2 分钟
-            6 天27 分钟
-    """
-    if minutes == 0:
-        return "0 分钟"
-    
-    ret_str = ""
-    days = int(minutes // 1440)
-    if days != 0:
-        ret_str += "{} 天".format(days)
-    hours = int(minutes % 1440)
-    hours = int(hours // 60)
-    if hours != 0:
-        ret_str += " {} 小时".format(hours)
-    minutes = int(minutes % 60)
-    if minutes != 0:
-        ret_str += " {} 分钟".format(minutes)
-
-    return ret_str
-
-
-def dhm_to_minutes(dhm):
-    """
-    :param dhm: 2 天18 小时1 分钟
-                3 小时44 分钟
-                2 分钟
-                6 天27 分钟
-    :return: time in minutes
-    """
-    if len(dhm) == 0:
-        return 0
-
-    days = 0
-    hours = 0
-    minutes = 0
-    d = dhm.find("天")
-    if d != -1:
-        days = dhm[:d].strip()
-        print(f"days: {days}")
-    h = dhm.find("小时")
-    if h != -1:
-        if d == -1:
-            hours = dhm[:h].strip()
-        else:
-            hours = dhm[d + 1:h].strip()
-        print(f"hours: {hours}")
-    m = dhm.find("分钟")
-    if m != -1:
-        if h == -1 and d == -1:
-            minutes = dhm[:m].strip()
-        elif h == -1 and d != 1:
-            minutes = dhm[d + 1:m].strip()
-        else:
-            minutes = dhm[h + 2:m].strip()
-        print(f"minutes: {minutes}")
-
-    return int(days) * 1440 + int(hours) * 60 + int(minutes)
 
 
 class KPIItem:
@@ -756,7 +659,24 @@ class itemST_BUG(KPIItem):
         self.summary += avg_finish_time
         self.summary += reopened_time
 
+class KPIPerformance:
+    
+    def __init__(self):
+        self.year = ""
+        self.name_cn = ""
+        self.customer_type = ""
+        self.org = ""
+        self.season = ""
+        self.pm_score = 0
+        self.supervisor_score = 0
+        self.total_score = 0
+        self.rank = 0
+        self.level = ""
+        self.comment = ""
+        self.opinion = ""
 
+
+kpi_perf = KPIPerformance()
 
 class KPIForOnePerson:
     def reset(self, r, name):
@@ -810,7 +730,7 @@ class KPIForOnePerson:
         self.prot_dev = itemPROT_DEV()
         self.st_bug = itemST_BUG()
         self.path = ''
-        # self.report = ""
+        self.perf = KPIPerformance()
 
 
 def kpi_folder_init(r_path, csv_list, members, clear_folder = False):
@@ -877,7 +797,55 @@ def kpi_analyze_process(r_path, members, fmt):
             print("Failed to closed: " + csv_file)
 
 
+def kpi_perf_row(row_list):
+    """
+    :param row_list: the row list ['用户名', '用户类型', '组织机构', '季度', 'PM得分', '主管得分', '总分']
+    :param first_row: the first row flag
+    :return: the row list
+    """
+    return row_list[0], row_list[4], row_list[5], row_list[6]
+
+
+def kpi_interview_process(kpi_path, year, season, members, fmt):
+    # parse the 2024Q4KPI考核成绩汇总.xls
+    kpi_perf_file = os.path.join(kpi_path, year + season + "KPI考核成绩汇总.xls")
+    kperf_book = xlrd.open_workbook(kpi_perf_file)
+    src_sheet = kperf_book.sheet_by_index(0)
+
+    first_row = True
+    for row in range(1, src_sheet.nrows):
+        row_list = src_sheet.row_values(row)
+        if len(row_list) == 0:
+            continue
+        print("row_list: ", row_list)
+        if first_row:
+            first_row = False
+            continue
+        
+        _name, _pm_score, _supervisor_score, _total_score = kpi_perf_row(row_list)
+        print(f"row_list: {_name}, {_pm_score}, {_supervisor_score}, {_total_score}")
+        mb = kpi_row.get_member_by_name(members, _name)
+        if mb is None:
+            print(f"member not found: {_name}")
+            continue
+        mb_perf = mb.kpi.perf
+        mb_perf.name_cn = _name
+        mb_perf.pm_score = _pm_score
+        mb_perf.supervisor_score = _supervisor_score
+        mb_perf.total_score = _total_score
+        mb_perf.year = year
+        mb_perf.season = season
+        mb_perf.rank = ""
+        mb_perf.level = ""
+        mb_perf.comment = ""
+        mb_perf.opinion = ""
+    
+
 def kpi_process(kpi_path, year, season, members, option, fmt):
+    if option == "kpi_interview":
+        kpi_interview_process(kpi_path, year, season, members, fmt)
+        return
+    
     csv_list = get_kpi_csv_file_list(season)
     kpi_row.year = year
     

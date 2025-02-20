@@ -1,7 +1,7 @@
 from docx import Document
 import datetime, os
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from kpi import season_date
+from team_check_util import season_date, season_cvt
 
 replace_list = {
     '<<Name>>': '王炯',
@@ -19,13 +19,6 @@ replace_list = {
     '<<Level>>': '',
     '<<Comment>>': '',
     '<<Opinion>>': ''
-}
-
-season_cvt = {
-    'Q1': '一',
-    'Q2': '二',
-    'Q3': '三',
-    'Q4': '四'
 }
 
 
@@ -56,6 +49,14 @@ def doc_info_init(document, year, season, member):
     replace_list['<<S_Day>>'] = start_d[2:]
     replace_list['<<E_Month>>'] = end_d[:2]
     replace_list['<<E_Day>>'] = end_d[2:]
+    
+    replace_list['<<P_Score>>'] = member.kpi.perf.pm_score
+    replace_list['<<M_Score>>'] = member.kpi.perf.supervisor_score
+    replace_list['<<Total_Score>>'] = member.kpi.perf.total_score
+    replace_list['<<Rank>>'] = member.kpi.perf.rank
+    replace_list['<<Level>>'] = member.kpi.perf.level
+    replace_list['<<Comment>>'] = member.kpi.perf.comment
+    replace_list['<<Opinion>>'] = member.kpi.perf.opinion
 
 def update_doc_info(doc, year, season, member):
     '''
@@ -73,7 +74,7 @@ def update_doc_info(doc, year, season, member):
         table_count += 1
         for row in table.rows:
             for cell in row.cells:
-                print(cell.text)
+                #print(cell.text)
                 for tl in _temp_list:
                     if tl[0] in cell.text:
                         cell.text = cell.text.replace(tl[0], tl[1])
@@ -105,9 +106,11 @@ def folder_init(p_folder):
 def kpi_interview_form_generator(docx_template, year, season, rel_path, members):
     '''
     Generate the KPI Interview Form.
-    2024年三季度绩效考核面谈表-曹政
     '''
-    file_name_prefix = "{}年{}季度绩效考核面谈表-".format(year, season_cvt[season])
+    # Initialize the folder.
+    # /interview_form
+    #     /sys
+    #     /app
     _rpath = os.path.join(rel_path, "interview_form")
     folder_init(_rpath)
     sys_path = os.path.join(_rpath, "sys")
@@ -115,6 +118,9 @@ def kpi_interview_form_generator(docx_template, year, season, rel_path, members)
     app_path = os.path.join(_rpath, "app")
     folder_init(app_path)
     
+    # Generate the KPI Interview Form
+    # 2024年三季度绩效考核面谈表-曹政
+    file_name_prefix = "{}年{}季度绩效考核面谈表-".format(year, season_cvt[season])
     for member in members:
         _fname = file_name_prefix + member.name_cn + ".docx"
         if member.group == member.GROUP_SYSTEM:
@@ -130,7 +136,7 @@ def kpi_interview_form_generator(docx_template, year, season, rel_path, members)
             if doc:
                 doc.save(_rp)
 
-def build_docx(members, year, season,  rel_path, docx_template = "kpi_interview_form_template.docx"):
+def build_docx(members, year, season, rel_path, docx_template = "kpi_interview_form_template.docx"):
     '''     
     Build the KPI Interview Form.
     '''

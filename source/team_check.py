@@ -4,7 +4,6 @@ from kpi import kpi_process
 from team import Team
 from codereview import cr_parse_result
 from database import data_base as db
-from report import build_docx
 
 
 software_develop_team = Team()
@@ -20,8 +19,8 @@ def args_init():
     parser.add_argument('-s', '--season', type=str,  choices=['Q1','Q2','Q3','Q4'], help='KPI season')
     parser.add_argument('--cr_date', type=str, default='0000', help='date of code review, formate: mmdd')
     parser.add_argument('-y', '--year', type=str, default='0000', help='The year of the KPI season')
-    parser.add_argument('-a', '--archive', type=str, choices=['csv', 'database'], default='csv', help='How to archive the data')
-    parser.add_argument('-t', '--type', type=str, choices=['cr','kpi_pre','kpi_analyze','kpi'], 
+    parser.add_argument('-a', '--archive', type=str, choices=['csv', 'docx', 'database'], default='csv', help='How to archive the data')
+    parser.add_argument('-t', '--type', type=str, choices=['cr','kpi_pre','kpi_analyze', 'kpi_interview', 'kpi'], 
                         help='There are 4 types: cr, kpi_pre, kpi_analyze, kpi' +
                         'cr: code review, kpi_pre: KPI preprocess, kpi_analyze: KPI analyze, kpi: Full KPI process')
     parser.add_argument('-rel', '--release', type=str, default='docx', help='Build the KPI Interview Form.')
@@ -60,8 +59,6 @@ def team_kpi_process(kpi_path, year, season, option, archive):
         software_develop_team.save_as_text("kpi", output_file)
 
 
-
-
 def main():
     '''
     Main function for teamcheck.
@@ -84,21 +81,20 @@ def main():
                 work_type = 'cr'
                 code_review_process(root_path)
 
-        case 'kpi_pre' | 'kpi_analyze' | 'kpi':
+        case 'kpi_pre' | 'kpi_analyze' | 'kpi' | 'kpi_interview':
             if args.season == None or args.year == '0000':
                 print("Please input the season and year for KPI")
             else:
-                work_type = 'kpi'
                 work_path = os.path.join(root_path, args.season)
                 team_kpi_process(work_path, args.year, args.season, args.type, args.archive)
+                
+                if args.type == 'kpi_interview':
+                    software_develop_team.team_preformance(args.year, args.season, work_path, 'docx')
 
         case _: 
             print("Please input the correct type: cr, kpi_pre, kpi_analyze, kpi")
 
-    if args.release == 'docx':
-        if work_type == 'kpi':
-            build_docx(software_develop_team.members, args.year, args.season, work_path, "kpi_interview_form_template.docx")
 
-# 外部调用的时候不执行
+# Do not execute when imported as a module
 if __name__ == '__main__':
     main()

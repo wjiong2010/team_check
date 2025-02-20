@@ -3,6 +3,7 @@ from xml.dom import DOMException
 from kpi import KPIForOnePerson
 from openpyxl import Workbook
 from excel_format import ExcelFormat
+from report import build_docx
 
 CR_ELEMENT_NODE = 1
 xl_format = ExcelFormat()
@@ -152,14 +153,6 @@ class TeamMember:
         self.work_pro_apps = []
         self.cr_result = []
         self.kpi = KPIForOnePerson(self.name_en, self.name_cn)
-        self.p_score = 0.0
-        self.m_score = 0.0
-        self.key_score = 0.0
-        self.total_score = 0.0
-        self.rank = 0   # 排名
-        self.level = ''     # 等级
-        self.comment = ''   # 评语
-        self.opinion = ''   # 意见
 
 
 class Team:
@@ -239,7 +232,6 @@ class Team:
             self.member_db_list.append(l)
         # print("222: " + str(self.member_db_list))
 
-
     def print_members(self):
         # for mb in self.members:
         #     print(mb.name_cn)
@@ -272,8 +264,44 @@ class Team:
                 if 'application_development_group' == node.nodeName or 'system_development_group' == node.nodeName:
                     self.parse_developer(node)
         
-        self.member_db_pro()
-        self.print_members()
+        # self.member_db_pro()
+        # self.print_members()
+    
+    def get_level(self, rank):
+        '''
+        Get the level according to the rank.
+        S: 5%
+        A: 10%
+        B: 50%
+        C: 30%
+        D: 5%
+        '''
+        _rank = int(rank)
+        total_members = len(self.members)
+        if _rank <= int(total_members * 0.05):
+            return 'S'
+        elif _rank <= int(total_members * 0.15):
+            return 'A'
+        elif _rank <= int(total_members * 0.65):
+            return 'B'
+        elif _rank <= int(total_members * 0.95):
+            return 'C'
+        else:
+            return 'D'
+
+    def team_preformance(self, year, season, r_path, fmt, template = "kpi_interview_form_template.docx"):
+        print("Total members111: " + str(len(self.members)))
+        self.members = sorted(self.members, key=lambda mb: mb.kpi.perf.total_score, reverse=True)
+        print("Total members: " + str(len(self.members)))
+        for mb in self.members:
+            mb.kpi.perf.pm_score = str(mb.kpi.perf.pm_score)
+            mb.kpi.perf.supervisor_score = str(mb.kpi.perf.supervisor_score)
+            mb.kpi.perf.total_score = str(mb.kpi.perf.total_score)
+            mb.kpi.perf.rank = str(self.members.index(mb) + 1)
+            mb.kpi.perf.level = self.get_level(mb.kpi.perf.rank)
+            print(mb.name_cn + " " + str(mb.kpi.perf.total_score) + " " + str(mb.kpi.perf.rank) + " " + str(mb.kpi.perf.level))
+
+        build_docx(self.members, year, season, r_path, template)
 
     def __init__(self):
         self.COL_A_WIDTH = 20
