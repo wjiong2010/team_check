@@ -1,7 +1,7 @@
 from docx import Document
 import datetime, os
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-
+from kpi import season_date
 
 replace_list = {
     '<<Name>>': '王炯',
@@ -21,16 +21,18 @@ replace_list = {
     '<<Opinion>>': ''
 }
 
+season_cvt = {
+    'Q1': '一',
+    'Q2': '二',
+    'Q3': '三',
+    'Q4': '四'
+}
 
-def update_doc_info(document):
+
+def doc_info_init(document, year, season, member):
     '''
-    Update the document information.
+    Initialize the document information.
     '''
-    _temp_list = []
-    for i,j in replace_list.items():
-        _temp_list.append(tuple([i, j]))
-    print(_temp_list)
-    
     document.core_properties.author = "John Wang"
     # doc.core_properties.category = "Queclink"
     # doc.core_properties.comments = "Queclink"
@@ -44,8 +46,30 @@ def update_doc_info(document):
     # doc.core_properties.subject = "Queclink"
     # doc.core_properties.title = "Queclink"
     # doc.core_properties.version = "Queclink"
+    
+    replace_list['<<Name>>'] = member.name_cn
+    replace_list['<<Year>>'] = year
+    replace_list['<<Season>>'] = season_cvt[season]
+    
+    start_d, end_d = season_date(season)
+    replace_list['<<S_Month>>'] = start_d[:2]
+    replace_list['<<S_Day>>'] = start_d[2:]
+    replace_list['<<E_Month>>'] = end_d[:2]
+    replace_list['<<E_Day>>'] = end_d[2:]
+
+def update_doc_info(doc, year, season, member):
+    '''
+    Update the document information.
+    '''
+    doc_info_init(doc, year, season, member)
+    
+    _temp_list = []
+    for i,j in replace_list.items():
+        _temp_list.append(tuple([i, j]))
+    print("_temp_list: " + str(_temp_list))
+
     table_count = 0
-    for table in document.tables:
+    for table in doc.tables:
         table_count += 1
         for row in table.rows:
             for cell in row.cells:
@@ -58,7 +82,7 @@ def update_doc_info(document):
                     if table_count <= 2:
                         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
-    for para in document.paragraphs:
+    for para in doc.paragraphs:
         for tl in _temp_list:
             if tl[0] in para.text:
                 para.text = para.text.replace(tl[0], tl[1])
@@ -78,18 +102,12 @@ def folder_init(p_folder):
             for file in files:
                 os.remove(os.path.join(root, file))
 
-def kpi_interview_form_generator(doc, year, season, rel_path, members):
+def kpi_interview_form_generator(docx_template, year, season, rel_path, members):
     '''
     Generate the KPI Interview Form.
     2024年三季度绩效考核面谈表-曹政
     '''
-    season_cvt = {
-        'Q1': '一季度',
-        'Q2': '二季度',
-        'Q3': '三季度',
-        'Q4': '四季度'
-    }
-    file_name_prefix = "{}年{}绩效考核面谈表-".format(year, season_cvt[season])
+    file_name_prefix = "{}年{}季度绩效考核面谈表-".format(year, season_cvt[season])
     _rpath = os.path.join(rel_path, "interview_form")
     folder_init(_rpath)
     sys_path = os.path.join(_rpath, "sys")
@@ -104,18 +122,18 @@ def kpi_interview_form_generator(doc, year, season, rel_path, members):
         else:
             _rp = os.path.join(app_path, _fname)
         print(_rp)
+        doc = Document(docx_template)
         try:
-            update_doc_info(doc)
+            update_doc_info(doc, year, season, member)
             doc.save(_rp)
         finally:
             if doc:
                 doc.save(_rp)
 
-def build_docx(members, year, season,  rel_path, doc_path = "kpi_interview_form_template.docx"):
+def build_docx(members, year, season,  rel_path, docx_template = "kpi_interview_form_template.docx"):
     '''     
     Build the KPI Interview Form.
     '''
-    doc = Document(doc_path)  # Create a document object.
-    kpi_interview_form_generator(doc, year, season, rel_path, members)  # Generate the KPI Interview Form.
+    kpi_interview_form_generator(docx_template, year, season, rel_path, members)  # Generate the KPI Interview Form.
 
     
