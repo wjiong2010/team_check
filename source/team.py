@@ -290,9 +290,11 @@ class Team:
             return 'D'
 
     def team_preformance(self, year, season, r_path, fmt, template = "kpi_interview_form_template.docx"):
-        print("Total members111: " + str(len(self.members)))
+        '''
+        Calculate the team performance.
+        '''
         self.members = sorted(self.members, key=lambda mb: mb.kpi.perf.total_score, reverse=True)
-        print("Total members: " + str(len(self.members)))
+
         for mb in self.members:
             mb.kpi.perf.pm_score = str(mb.kpi.perf.pm_score)
             mb.kpi.perf.supervisor_score = str(mb.kpi.perf.supervisor_score)

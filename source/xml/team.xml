@@ -85,7 +85,7 @@
             <work_gl_app item = ''/>
             <work_pro_app item = ''/>
         </developer>
-        <developer name_en = 'Elvin Shen' name_cn = '沈子扬'>
+        <developer name_en = 'Elvin Shen' name_cn = '沈子杨'>
             <work_app item = "CAN,CAS,CFU,TTR,CLT,AES,MQT,TLS"/>
             <work_module item = 'COMM,SERIAL'/>
             <work_gl_app item = ''/>
@@ -142,6 +142,12 @@
             <work_pro_app item = ''/>
         </developer>
         <developer name_en = 'Riven Wu' name_cn = '吴磊'>
+            <work_app item = ""/>
+            <work_module item = ''/>
+            <work_gl_app item = ''/>
+            <work_pro_app item = ''/>
+        </developer>
+        <developer name_en = 'Quake Zhang' name_cn = '张振'>
             <work_app item = ""/>
             <work_module item = ''/>
             <work_gl_app item = ''/>
