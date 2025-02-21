@@ -111,12 +111,15 @@ def kpi_interview_form_generator(docx_template, year, season, rel_path, members)
     # /interview_form
     #     /sys
     #     /app
+    #     /mtool
     _rpath = os.path.join(rel_path, "interview_form")
     folder_init(_rpath)
     sys_path = os.path.join(_rpath, "sys")
     folder_init(sys_path)
     app_path = os.path.join(_rpath, "app")
     folder_init(app_path)
+    mt_path = os.path.join(_rpath, "mtool")
+    folder_init(mt_path)
     
     # Generate the KPI Interview Form
     # 2024年三季度绩效考核面谈表-曹政
@@ -125,8 +128,10 @@ def kpi_interview_form_generator(docx_template, year, season, rel_path, members)
         _fname = file_name_prefix + member.name_cn + ".docx"
         if member.group == member.GROUP_SYSTEM:
             _rp = os.path.join(sys_path, _fname)
-        else:
+        elif member.group == member.GROUP_APPLICATION:
             _rp = os.path.join(app_path, _fname)
+        else:
+            _rp = os.path.join(mt_path, _fname)
         print(_rp)
         doc = Document(docx_template)
         try:

@@ -154,4 +154,24 @@
             <work_pro_app item = ''/>
         </developer>
     </system_development_group>
+    <tool_development_group>
+        <developer name_en = 'Duff Mao' name_cn = '毛伟'>
+            <work_app item = ""/>
+            <work_module item = ''/>
+            <work_gl_app item = ''/>
+            <work_pro_app item = ''/>
+        </developer>
+        <developer name_en = 'Karl Su' name_cn = '苏涛'>
+            <work_app item = ""/>
+            <work_module item = ''/>
+            <work_gl_app item = ''/>
+            <work_pro_app item = ''/>
+        </developer>
+        <developer name_en = 'Oliver Chen' name_cn = '陈阳'>
+            <work_app item = ""/>
+            <work_module item = ''/>
+            <work_gl_app item = ''/>
+            <work_pro_app item = ''/>
+        </developer>
+    </tool_development_group>
 </team>

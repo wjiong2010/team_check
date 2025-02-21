@@ -144,9 +144,10 @@ class TeamMember:
     def __init__(self):
         self.GROUP_SYSTEM = 'system_development_group'
         self.GROUP_APPLICATION = 'application_development_group'
+        self.GROUP_TOOL = 'tool_development_group'
         self.name_en = ''
         self.name_cn = ''
-        self.group = ''  # 'application_development_group' or 'system_development_group'
+        self.group = ''  # 'application_development_group', 'system_development_group' and 'tool_development_group'
         self.work_modules = []
         self.work_apps = []
         self.work_gl_apps = []
@@ -199,7 +200,7 @@ class Team:
         for mb in self.members:
             if 'cr_result' == select:
                 summary_in_text += mb.cr_result_in_text()
-            if 'kpi' == select and mb.group == 'application_development_group':
+            if 'kpi' == select and mb.group == mb.GROUP_APPLICATION:
                 summary_in_text += mb.kpi_in_text()
 
         with open(txt, 'w', encoding='utf-8') as f:
@@ -233,15 +234,15 @@ class Team:
         # print("222: " + str(self.member_db_list))
 
     def print_members(self):
-        # for mb in self.members:
-        #     print(mb.name_cn)
-        #     print(mb.name_en)
-        #     print(mb.group)
-        #     print(mb.work_apps)
-        #     print(mb.work_modules)
-        #     print(mb.work_gl_apps)
-        #     print(mb.work_pro_apps)
-        print(self.member_db_list)
+        for mb in self.members:
+            print(mb.name_cn)
+            print(mb.name_en)
+            print(mb.group)
+            print(mb.work_apps)
+            print(mb.work_modules)
+            print(mb.work_gl_apps)
+            print(mb.work_pro_apps)
+        # print(self.member_db_list)
 
     def init_members(self):
         file = "xml\\team.xml"
@@ -261,11 +262,13 @@ class Team:
 
         for node in root.childNodes:
             if CR_ELEMENT_NODE == node.nodeType:  # 1 is Element
-                if 'application_development_group' == node.nodeName or 'system_development_group' == node.nodeName:
+                if 'application_development_group' == node.nodeName or \
+                    'system_development_group' == node.nodeName or \
+                    'tool_development_group' == node.nodeName:
                     self.parse_developer(node)
         
         # self.member_db_pro()
-        # self.print_members()
+        self.print_members()
     
     def get_level(self, rank):
         '''
