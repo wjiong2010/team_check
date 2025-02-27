@@ -103,7 +103,7 @@ def folder_init(p_folder):
             for file in files:
                 os.remove(os.path.join(root, file))
 
-def kpi_interview_form_generator(docx_template, year, season, rel_path, members):
+def kpi_interview_form_generator(docx_template, tg, year, season, rel_path, members):
     '''
     Generate the KPI Interview Form.
     '''
@@ -126,9 +126,9 @@ def kpi_interview_form_generator(docx_template, year, season, rel_path, members)
     file_name_prefix = "{}年{}季度绩效考核面谈表-".format(year, season_cvt[season])
     for member in members:
         _fname = file_name_prefix + member.name_cn + ".docx"
-        if member.group == member.GROUP_SYSTEM:
+        if member.group == tg.GROUP_SYSTEM:
             _rp = os.path.join(sys_path, _fname)
-        elif member.group == member.GROUP_APPLICATION:
+        elif member.group == tg.GROUP_APPLICATION:
             _rp = os.path.join(app_path, _fname)
         else:
             _rp = os.path.join(mt_path, _fname)
@@ -140,11 +140,5 @@ def kpi_interview_form_generator(docx_template, year, season, rel_path, members)
         finally:
             if doc:
                 doc.save(_rp)
-
-def build_docx(members, year, season, rel_path, docx_template = "kpi_interview_form_template.docx"):
-    '''     
-    Build the KPI Interview Form.
-    '''
-    kpi_interview_form_generator(docx_template, year, season, rel_path, members)  # Generate the KPI Interview Form.
 
     

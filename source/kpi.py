@@ -9,9 +9,6 @@ from team_check_util import is_chinese
 import xlrd
 import xlwt
 
-# GROUP_APPLICATION = TeamMember.GROUP_APPLICATION
-#GROUP_SYSTEM = TeamMember.GROUP_SYSTEM
-
 
 def get_csv_filename(r, fn):
     '''
@@ -389,10 +386,10 @@ class itemFAEBUG(KPIItem):
     def parser(self, kpi_row):
         # total count
         self.total += 1
-        
+
         # count status
         super().do_status_count(kpi_row.status)
-        
+
         # reopen times
         self.reopen_times += int(kpi_row.reopen_times)
 
@@ -769,9 +766,9 @@ def kpi_pre_process(r_path, csv_list, members, fmt):
                 kpi_row.save_kpi_row(mb, fmt)
 
 
-def kpi_analyze_process(r_path, members, fmt):
+def kpi_analyze_process(r_path, members, mb_groups, fmt):
     for mb in members:
-        if mb.group != 'application_development_group': continue
+        if mb.group not in mb_groups: continue
         csv_file = get_csv_filename(kpi_row.path, mb.name_en)
         csv_file = os.path.join(r_path, csv_file)
         
@@ -841,7 +838,7 @@ def kpi_interview_process(kpi_path, year, season, members, fmt):
         mb_perf.opinion = ""
     
 
-def kpi_process(kpi_path, year, season, members, option, fmt):
+def kpi_process(kpi_path, year, season, members, member_groups, option, fmt):
     if option == "kpi_interview":
         kpi_interview_process(kpi_path, year, season, members, fmt)
         return
@@ -858,4 +855,4 @@ def kpi_process(kpi_path, year, season, members, option, fmt):
         if p == '':
             print("No kpi files for analyze.")
             return
-        kpi_analyze_process(p, members, fmt)
+        kpi_analyze_process(p, members, member_groups, fmt)

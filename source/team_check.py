@@ -1,12 +1,9 @@
 import os
 import argparse
 from kpi import kpi_process
-from team import Team
+from team import software_develop_team
 from codereview import cr_parse_result
 from database import data_base as db
-
-
-software_develop_team = Team()
 
 
 def args_init():
@@ -52,7 +49,9 @@ def team_kpi_process(kpi_path, year, season, option, archive):
     '''
     Process the team KPI.
     '''
-    kpi_process(kpi_path, year, season, software_develop_team.members, option, archive)
+    member_groups = []
+    member_groups.append(software_develop_team.tg.GROUP_APPLICATION)
+    kpi_process(kpi_path, year, season, software_develop_team.members, member_groups, option, archive)
 
     if option == 'kpi' or option == 'kpi_analyze':
         output_file = os.path.join(kpi_path, year + season + "-KPI_Report.txt")

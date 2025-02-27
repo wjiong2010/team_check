@@ -3,7 +3,7 @@ from xml.dom import DOMException
 from kpi import KPIForOnePerson
 from openpyxl import Workbook
 from excel_format import ExcelFormat
-from report import build_docx
+from report import kpi_interview_form_generator
 
 CR_ELEMENT_NODE = 1
 xl_format = ExcelFormat()
@@ -142,12 +142,9 @@ class TeamMember:
         return kpi_text
 
     def __init__(self):
-        self.GROUP_SYSTEM = 'system_development_group'
-        self.GROUP_APPLICATION = 'application_development_group'
-        self.GROUP_TOOL = 'tool_development_group'
         self.name_en = ''
         self.name_cn = ''
-        self.group = ''  # 'application_development_group', 'system_development_group' and 'tool_development_group'
+        self.group = 0  # 'system_development_group: 1', 'application_development_group: 2' and 'tool_development_group: 3'
         self.work_modules = []
         self.work_apps = []
         self.work_gl_apps = []
@@ -157,6 +154,23 @@ class TeamMember:
 
 
 class Team:
+    class TeamGroups:
+        def get_group_id_by_name(self, name):
+            return self.team_group[name]
+
+        def get_groups_name(self):
+            return list(self.team_group.keys())
+
+        def __init__(self):
+            self.GROUP_SYSTEM = 1
+            self.GROUP_APPLICATION = 2
+            self.GROUP_TOOL = 3
+            self.team_group = {
+                'system_development_group': self.GROUP_SYSTEM,
+                'application_development_group': self.GROUP_APPLICATION,
+                'tool_development_group': self.GROUP_TOOL
+            }
+
     def save_as_excel(self, select, excel):
         app_r = 1
         sys_r = 1
@@ -172,10 +186,10 @@ class Team:
 
         for mb in self.members:
             if 'cr_result' == select:
-                if mb.group == mb.GROUP_APPLICATION:
+                if mb.group == self.tg.GROUP_APPLICATION:
                     app_r += mb.cr_result_in_excel(ws_app, app_r)
                     app_r += 1
-                if mb.group == mb.GROUP_SYSTEM:
+                if mb.group == self.tg.GROUP_SYSTEM:
                     sys_r += mb.cr_result_in_excel(ws_sys, sys_r)
                     sys_r += 1
 
@@ -200,7 +214,7 @@ class Team:
         for mb in self.members:
             if 'cr_result' == select:
                 summary_in_text += mb.cr_result_in_text()
-            if 'kpi' == select and mb.group == mb.GROUP_APPLICATION:
+            if 'kpi' == select and mb.group == self.tg.GROUP_APPLICATION:
                 summary_in_text += mb.kpi_in_text()
 
         with open(txt, 'w', encoding='utf-8') as f:
@@ -213,7 +227,7 @@ class Team:
                     m = TeamMember()
                     m.name_en = subNode.getAttribute('name_en')
                     m.name_cn = subNode.getAttribute('name_cn')
-                    m.group = node.nodeName
+                    m.group = self.tg.get_group_id_by_name(node.nodeName)
                     parse_work(m, subNode)
                     m.kpi = KPIForOnePerson(m.name_en, m.name_cn)
                     self.members.append(m)
@@ -260,11 +274,10 @@ class Team:
         results_ver = root.getAttribute('version')
         print(results_ver)
 
+        groups_list = self.tg.get_groups_name()
         for node in root.childNodes:
             if CR_ELEMENT_NODE == node.nodeType:  # 1 is Element
-                if 'application_development_group' == node.nodeName or \
-                    'system_development_group' == node.nodeName or \
-                    'tool_development_group' == node.nodeName:
+                if node.nodeName in groups_list:
                     self.parse_developer(node)
         
         # self.member_db_pro()
@@ -306,10 +319,16 @@ class Team:
             mb.kpi.perf.level = self.get_level(mb.kpi.perf.rank)
             print(mb.name_cn + " " + str(mb.kpi.perf.total_score) + " " + str(mb.kpi.perf.rank) + " " + str(mb.kpi.perf.level))
 
-        build_docx(self.members, year, season, r_path, template)
+
+        docx_template = "kpi_interview_form_template.docx"
+        kpi_interview_form_generator(template,  self.tg, year, season, r_path, self.members)
 
     def __init__(self):
         self.COL_A_WIDTH = 20
         self.COL_B_WIDTH = 120
+        self.tg = self.TeamGroups()
         self.members = []
         self.member_db_list = []
+
+
+software_develop_team = Team()
