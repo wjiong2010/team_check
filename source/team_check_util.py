@@ -21,6 +21,31 @@ def season_date(season):
     
     return _season_dict[season][0], _season_dict[season][1]
 
+
+def date_cvt(date):
+    '''
+    Convert the date from mmdd to mm/dd.
+    '''
+    print("Enter date:{}".format(date))
+    pattern = r'^(\d{4}\/\d{1,2}\/\d{1,2})( \d{1,2})?(:\d{2})?(:\d{2})?$'
+    date_match = re.match(pattern, date)
+    if date_match is None:
+        print("date format error! date:{}".format(date))
+        return date
+    
+    print("date_match:{}, len: {}".format(date_match.groups(), len(date_match.groups())))
+    if date_match.group(2) is None:
+        date += " 00:00:00" # add hours, minutes and seconds if pattern
+    elif date_match.group(3) is None:
+        date += ":00:00" # add minutes and seconds if pattern
+    elif date_match.group(4) is None:
+        date += ":00" # add seconds if pattern
+    else:
+        print("date group:{}, {}, {}, {}".format(date_match.group(1), date_match.group(2), date_match.group(3), date_match.group(4)))
+
+    return date.replace("/","-")
+
+
 def date_diff(start_date, end_date, date_type = "days"):
     '''
     Calculate the difference between two dates.
@@ -31,16 +56,11 @@ def date_diff(start_date, end_date, date_type = "days"):
     assert(len(end_date) != 0)
     
     # format the date, convert the date from YYYY/MM/DD to YYYY-MM-DD
-    date_format = "%Y-%m-%d %H:%M:%S"
-    f_start = start_date.replace("/","-")
-    f_end = end_date.replace("/","-")
-    
-    if len(f_start) <= 10:
-        f_start += " 00:00:00"
-    if len(f_end) <= 10:
-        f_end += " 00:00:00"
+    f_start = date_cvt(start_date)
+    f_end = date_cvt(end_date)
     print("f_start:{} f_end:{}".format(f_start, f_end))
 
+    date_format = "%Y-%m-%d %H:%M:%S"
     start_date = datetime.strptime(f_start, date_format)
     end_date = datetime.strptime(f_end, date_format)
 
