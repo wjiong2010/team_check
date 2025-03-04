@@ -293,6 +293,90 @@ class KPIItem:
         self.status_counter = {}
         self.total = 0
         self.total_complete = 0
+        self.STATUS_UNKNOWN = -1
+        self.RESOLVED = 0
+        self.REOPEN = 1
+        self.REOPEN_CONFIRM = 2
+        self.WAIT_FEEDBACK = 3
+        self.NEW = 4
+        self.DOING = 5
+        self.ASSIGNED = 6
+        self.PENDING = 7
+        self.TESTING = 8
+        self.REJECTED = 9
+        self.WAIT_RELEASE = 10
+        self.CLOSED = 11
+        self.NO_FEEDBACK = 12
+        self.EVALUATING = 13
+        self.NO_RESPONSE = 14
+        self.FINISHED = 15
+        self.UNCONFIRMED = 16
+        self.LOG_REQ = 17
+        self.REFUSED = 18
+        self.WAIT_SOLVE = 19
+        self.CHN_RESOLVED = 20
+        self.CHN_RESOLVED_RDM = 21
+        self.CHN_REOPEN = 22
+        self.REOPEND = 23
+        self.CHN_WAIT_SOLVE = 24
+        self.CHN_UNSTART = 25
+        self.CHN_WAIT_SOLEV_RDM = 26
+        self.CHN_DOING = 27
+        self.CHN_ASSIGNED = 28
+        self.CHN_PAUSE = 29
+        self.CHN_TESTING = 30
+        self.CHN_CLOSED = 31
+        self.CHN_FINISHED = 32
+        self.CHN_UNCONFIRMED = 33
+        self.CHN_REFUSED = 34
+        self.status_dict = {
+            "NO_FEEDBACK": self.NO_FEEDBACK,
+            "NO_RESPONSE": self.NO_RESPONSE,
+            "RESOLVED": self.RESOLVED,
+            "已修复": self.CHN_RESOLVED,
+            "RESOLVED（已解决）": self.CHN_RESOLVED_RDM,
+            "REOPEN": self.REOPEN,
+            "REOPENED": self.REOPEND,
+            "重新打开": self.CHN_REOPEN,
+            "REOPEN_CONFIRM": self.REOPEN_CONFIRM,
+            "WAIT_FEEDBACK": self.WAIT_FEEDBACK,
+            "NEW": self.NEW,
+            "待处理": self.CHN_WAIT_SOLVE,
+            "未开始": self.CHN_UNSTART,
+            "WAIT_SOLVE（待解决）": self.CHN_WAIT_SOLEV_RDM,
+            "DOING": self.DOING,
+            "进行中": self.CHN_DOING,
+            "ASSIGNED": self.ASSIGNED,
+            "已分配": self.CHN_ASSIGNED,
+            "PENDING": self.PENDING,
+            "暂停": self.CHN_PAUSE,
+            "TESTING": self.TESTING,
+            "验证中": self.CHN_TESTING,
+            "REJECTED": self.REJECTED,
+            "WAIT_RELEASE": self.WAIT_RELEASE,
+            "CLOSED": self.CLOSED,
+            "关闭": self.CHN_CLOSED,
+            "EVALUATING": self.EVALUATING,
+            "FILED": self.FINISHED,
+            "已完成": self.CHN_FINISHED,
+            "UNCONFIRMED": self.UNCONFIRMED,
+            "待讨论": self.CHN_UNCONFIRMED,
+            "LOG_Req": self.LOG_REQ,
+            "拒绝": self.CHN_REFUSED
+        }
+        self.status_id = self.STATUS_UNKNOWN
+    
+    def get_status_key(self, status_id):
+        for k, v in self.status_dict.items():
+            if status_id == v:
+                return k
+        return ""
+    
+    def get_status_id(self, status):
+        try:
+            return self.status_dict[status]
+        except KeyError:
+            return self.STATUS_UNKNOWN
 
     def reset(self):
         # self.name_list.clear()
@@ -301,6 +385,22 @@ class KPIItem:
         for k in keys_list:
             self.status_counter[k] = 0
 
+    #def get_info(self):
+    #    # line_format = "{0:>40},{1:>40}"
+    #    ts = " " * 4
+    #    for s in self.name_list:
+    #        ts += s
+    #        ts += '&'
+    #    ts = ts.strip('&')
+    #    ts += ', total {0}:\n'.format(self.total)
+#
+    #    keys_list = list(self.status_counter.keys())
+    #    for k in keys_list:
+    #        if self.status_counter[k] != 0:
+    #            ts += " " * 8 + k + ': ' + str(self.status_counter[k]) + '\n'
+    #    # print(ts)
+    #    return ts
+    
     def get_info(self):
         # line_format = "{0:>40},{1:>40}"
         ts = " " * 4
@@ -313,25 +413,35 @@ class KPIItem:
         keys_list = list(self.status_counter.keys())
         for k in keys_list:
             if self.status_counter[k] != 0:
-                ts += " " * 8 + k + ': ' + str(self.status_counter[k]) + '\n'
+                _stat = self.get_status_key(k)
+                if _stat == "": continue
+                ts += " " * 8 + _stat + ': ' + str(self.status_counter[k]) + '\n'
         # print(ts)
         return ts
 
-    def do_status_count(self, st):
-        # remove the content in '（'
-        i = st.find('（')
-        if i != -1:
-            st = st[:i]
+    def do_status_count(self, status_id):
+        try:
+            self.status_counter[status_id] += 1
+        except KeyError:
+            print(f"status_id: {status_id} is invalid")
 
-        keys_list = list(self.status_counter.keys())
-        for k in keys_list:
-            print(f"checking {st} in {k}")
-            if -1 != k.find(st):
-                print(f"{st} in {k}")
-                self.status_counter[k] += 1
-                break
+    #
+    #def do_status_count(self, st):
+    #    # remove the content in '（'
+    #    i = st.find('（')
+    #    if i != -1:
+    #        st = st[:i]
+    #
+    #    keys_list = list(self.status_counter.keys())
+    #    for k in keys_list:
+    #        print(f"checking {st} in {k}")
+    #        if -1 != k.find(st):
+    #            print(f"{st} in {k}")
+    #            self.status_counter[k] += 1
+    #            break
 
     def rate_calculater(self, rt_list, pre, count=0):
+        print("rt_list: {}, stat: {}".format(str(rt_list), str(self.status_counter)))
         if self.total == 0:
             return " " * 4 + pre + " null"
 
@@ -361,21 +471,25 @@ class itemFAEBUG(KPIItem):
     def __init__(self):
         super().__init__()
         self.name_list = ["FAE_BUG"]
+        self.job_done_flags = [self.NO_FEEDBACK, self.RESOLVED, self.REJECTED, self.WAIT_RELEASE, self.CHN_CLOSED, self.CLOSED, self.NO_RESPONSE]
         self.status_counter = {
-            "NO_FEEDBACK": 0,
-            "NO_RESPONSE": 0,
-            "RESOLVED": 0,
-            "REOPEN": 0,
-            "REOPEN_CONFIRM": 0,
-            "WAIT_FEEDBACK": 0,
-            "NEW-未开始": 0,
-            "DOING-进行中": 0,
-            "ASSIGNED": 0,
-            "PENDING": 0,
-            "TESTING": 0,
-            "REJECTED": 0,
-            "WAIT_RELEASE": 0,
-            "CLOSED-关闭": 0
+            self.NO_FEEDBACK: 0,
+            self.NO_RESPONSE: 0,
+            self.RESOLVED: 0,
+            self.REOPEN: 0,
+            self.REOPEN_CONFIRM: 0,
+            self.WAIT_FEEDBACK: 0,
+            self.NEW: 0,
+            self.CHN_UNSTART: 0,
+            self.DOING: 0,
+            self.CHN_DOING: 0,
+            self.ASSIGNED: 0,
+            self.PENDING: 0,
+            self.TESTING: 0,
+            self.REJECTED: 0,
+            self.WAIT_RELEASE: 0,
+            self.CHN_CLOSED: 0,
+            self.CLOSED: 0
         }
         self.fix_pre = "FAE_BUG Fixed: "
         self.reopen_pre = "FAE_BUG Reopened: "
@@ -388,14 +502,14 @@ class itemFAEBUG(KPIItem):
         self.total += 1
 
         # count status
-        super().do_status_count(kpi_row.status)
+        self.status_id = super().get_status_id(kpi_row.status)
+        super().do_status_count(self.status_id)
 
         # reopen times
         self.reopen_times += int(kpi_row.reopen_times)
 
     def calcu_summary(self):
-        rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "CLOSED-关闭", "NO_RESPONSE"]
-        self.summary = super().rate_calculater(rt_list, self.fix_pre) + "\n"
+        self.summary = super().rate_calculater(self.job_done_flags, self.fix_pre) + "\n"
 
         # "REOPEN"
         # reopen率 = 总reopen次数/FAEBUG总数 x 100%
@@ -411,23 +525,25 @@ class itemREQUIREMENT(KPIItem):
     def __init__(self):
         super().__init__()
         self.name_list = ["REQUIREMENT", "需求"]
-        self.job_done_flags = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "关闭", "NO_RESPONSE"]
+        self.job_done_flags = [self.NO_FEEDBACK, self.RESOLVED, self.REJECTED, self.WAIT_RELEASE, self.CHN_CLOSED, self.NO_RESPONSE]
         self.status_counter = {
-            "RESOLVED": 0,
-            "REOPEN": 0,
-            "REOPEN_CONFIRM": 0,
-            "WAIT_FEEDBACK": 0,
-            "NEW-未开始": 0,
-            "DOING-进行中": 0,
-            "ASSIGNED": 0,
-            "PENDING": 0,
-            "TESTING": 0,
-            "REJECTED": 0,
-            "WAIT_RELEASE": 0,
-            "关闭": 0,
-            "NO_FEEDBACK": 0,
-            "EVALUATING": 0,
-            "NO_RESPONSE": 0
+            self.RESOLVED: 0,
+            self.REOPEN: 0,
+            self.REOPEN_CONFIRM: 0,
+            self.WAIT_FEEDBACK: 0,
+            self.NEW: 0,
+            self.CHN_UNSTART: 0,
+            self.DOING: 0,
+            self.CHN_DOING: 0,
+            self.ASSIGNED: 0,
+            self.PENDING: 0,
+            self.TESTING: 0,
+            self.REJECTED: 0,
+            self.WAIT_RELEASE: 0,
+            self.CHN_CLOSED: 0,
+            self.NO_FEEDBACK: 0,
+            self.EVALUATING: 0,
+            self.NO_RESPONSE: 0
         }
         self.fix_pre = "REQUIREMENT Completed: "
         self.reopen_pre = "REQUIREMENT Reopened: "
@@ -438,6 +554,8 @@ class itemREQUIREMENT(KPIItem):
         self.in_time = 0
         self.out_time = 0
         self.out_time_list = []
+        self.rejects = 0
+        self.reject_list = []
         self._ddl = "" # deadline or planned finish date
 
     def _parser_in_out_time(self, deadline, plan_fin_date, complete_time):
@@ -485,7 +603,12 @@ class itemREQUIREMENT(KPIItem):
         self.total += 1
 
         # status count
-        super().do_status_count(kpi_row.status)
+        self.status_id = super().get_status_id(kpi_row.status)
+        super().do_status_count(self.status_id)
+        
+        if self.status_id == self.REJECTED:
+            self.rejects += 1
+            self.reject_list.append(kpi_row.id)
 
         # reopen times
         rop_t = kpi_row.reopen_times
@@ -501,7 +624,6 @@ class itemREQUIREMENT(KPIItem):
             
 
     def calcu_summary(self):
-
         # COMPLETE rate
         self.summary = super().rate_calculater(self.job_done_flags, self.fix_pre) + "\n"
         print(f"requirement total complete: {self.total_complete}/{self.total}")
@@ -513,9 +635,9 @@ class itemREQUIREMENT(KPIItem):
         else:
             rate = "{:.1f}%".format(float(self.in_time / self.total_complete) * 100.0)
             self.summary += "    REQUIREMENT complete in time({}/{}): {}".format(self.in_time, self.total_complete, rate)
-        self.summary += "  " + str(self.out_time_list)
+        self.summary += "  TIMEOUT: " + str(self.out_time_list) + " REJECTED: " + str(self.reject_list)
         self.summary += "\n"
-        
+
         # "REOPEN"
         # reopen率 = 总reopen次数/REQUIREMENT总数 x 100%
         self.summary += super().rate_calculater([], self.reopen_pre, self.reopen_times) + "\n"
@@ -535,19 +657,26 @@ class itemPROT_DEV(KPIItem):
     def __init__(self):
         super().__init__()
         self.name_list = ["PROTOCOL", "HF_PROTOCOL", "DEVELOP", "任务", "子任务"]
+        self.job_done_flags = [self.NO_FEEDBACK, self.RESOLVED, self.REJECTED, self.WAIT_RELEASE, self.CLOSED, self.CHN_CLOSED]
         self.status_counter = {
-            "NO_FEEDBACK": 0,
-            "RESOLVED": 0,
-            "CLOSED-关闭": 0,
-            "WAIT_FEEDBACK": 0,
-            "NEW-未开始": 0,
-            "DOING-进行中": 0,
-            "ASSIGNED-已分配": 0,
-            "PENDING-暂停": 0,
-            "TESTING": 0,
-            "REJECTED": 0,
-            "WAIT_RELEASE": 0,
-            "FILED-已完成": 0
+            self.NO_FEEDBACK: 0,
+            self.RESOLVED: 0,
+            self.CLOSED: 0,
+            self.CHN_CLOSED: 0,
+            self.WAIT_FEEDBACK: 0,
+            self.NEW: 0,
+            self.CHN_UNSTART: 0,
+            self.DOING: 0,
+            self.CHN_DOING: 0,
+            self.ASSIGNED: 0,
+            self.CHN_ASSIGNED: 0,
+            self.PENDING: 0,
+            self.CHN_PAUSE: 0,
+            self.TESTING: 0,
+            self.REJECTED: 0,
+            self.WAIT_RELEASE: 0,
+            self.FINISHED: 0,
+            self.CHN_FINISHED: 0
         }
         self.fix_pre = "Protocol & Develop Complete: "
         self.summary = " " * 4 + self.fix_pre + "null"
@@ -557,29 +686,35 @@ class itemPROT_DEV(KPIItem):
         self.total += 1
         
         # status count
-        super().do_status_count(kpi_row.status)
+        self.status_id = super().get_status_id(kpi_row.status)
+        super().do_status_count(self.status_id)
 
     def calcu_summary(self):
-        rt_list = ["NO_FEEDBACK", "RESOLVED", "REJECTED", "WAIT_RELEASE", "CLOSED-关闭", "WAIT_FEEDBACK",
-                   "FILED-已完成"]
-        self.summary = super().rate_calculater(rt_list, self.fix_pre)
+        self.summary = super().rate_calculater(self.job_done_flags, self.fix_pre)
 
 
 class itemST_BUG(KPIItem):
     def __init__(self):
         super().__init__()
         self.name_list = ["ST_BUG", "HF_ST_BUG", "缺陷"]
+        self.job_done_flags = [self.CHN_REFUSED, self.RESOLVED, self.CHN_RESOLVED, self.CHN_RESOLVED_RDM, self.CLOSED, self.CHN_CLOSED, self.CHN_TESTING]
         self.status_counter = {
-            "NEW-待处理": 0,
-            "UNCONFIRMED-待讨论": 0,
-            "WAIT_SOLVE（待解决）": 0,
-            "RESOLVED-已修复": 0,
-            "LOG_Req": 0,
-            "拒绝": 0,
-            "CLOSED-关闭": 0,
-            "REOPENED-重新打开": 0,
-            "REOPEN": 0,
-            "验证中": 0
+            self.NEW: 0,
+            self.CHN_UNSTART: 0,
+            self.UNCONFIRMED: 0,
+            self.CHN_UNCONFIRMED: 0,
+            self.CHN_WAIT_SOLEV_RDM: 0,
+            self.RESOLVED: 0,
+            self.CHN_RESOLVED: 0,
+            self.LOG_REQ: 0,
+            self.CHN_REFUSED: 0,
+            self.CLOSED: 0,
+            self.CHN_CLOSED: 0,
+            self.REOPEN: 0,
+            self.CHN_REOPEN: 0,
+            self.REOPEND: 0,
+            self.CHN_TESTING: 0,
+            self.CHN_RESOLVED_RDM: 0
         }
         self.reopen_times = 0
         self.fix_pre = "ST_BUG Fixed: "
@@ -603,7 +738,8 @@ class itemST_BUG(KPIItem):
             is_redmin = False
         
         # status
-        super().do_status_count(kpi_row.status)
+        self.status_id = super().get_status_id(kpi_row.status)
+        super().do_status_count(self.status_id)
         
         # severity: critical, major, normal
         severity = kpi_row.severity
@@ -632,8 +768,7 @@ class itemST_BUG(KPIItem):
             self.reopened[severity] += 1
 
     def calcu_summary(self):
-        rt_list = ["拒绝", "RESOLVED-已修复", "CLOSED-关闭", "验证中"]
-        self.summary = super().rate_calculater(rt_list, self.fix_pre) + '\n'
+        self.summary = super().rate_calculater(self.job_done_flags, self.fix_pre) + '\n'
 
         severity_list = ["Critical", "Major", "Normal"]
         avg_finish_time = ""
