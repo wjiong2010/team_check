@@ -8,9 +8,10 @@ season_cvt = {
     'Q4': '四'
 }
 
-def season_date(season):
+def season_date(year, season, date_type = "MMDD"):
     '''
     Get the start and end date of the season.
+    date_type: MMDD or YYYY-MM-DD HH:MM:SS
     '''
     _season_dict = {
         "Q1": ["0101", "0331"],
@@ -19,7 +20,10 @@ def season_date(season):
         "Q4": ["1001", "1231"]
     }
     
-    return _season_dict[season][0], _season_dict[season][1]
+    if date_type == "MMDD":
+        return _season_dict[season][0], _season_dict[season][1]
+    else:
+        return f"{year}-{_season_dict[season][0]} 00:00:00", f"{year}-{_season_dict[season][1]} 23:59:59"
 
 
 def date_cvt(date):

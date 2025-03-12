@@ -44,7 +44,7 @@ def doc_info_init(document, year, season, member):
     replace_list['<<Year>>'] = year
     replace_list['<<Season>>'] = season_cvt[season]
     
-    start_d, end_d = season_date(season)
+    start_d, end_d = season_date(year, season)
     replace_list['<<S_Month>>'] = start_d[:2]
     replace_list['<<S_Day>>'] = start_d[2:]
     replace_list['<<E_Month>>'] = end_d[:2]

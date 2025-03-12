@@ -19,11 +19,11 @@ def get_csv_filename(r, fn):
     return os.path.join(r, t_fn)
 
 
-def get_kpi_csv_file_list(season):
+def get_kpi_csv_file_list(year, season):
     '''
     Get the KPI csv file list.
     '''
-    kpi_row.ss_start, kpi_row.ss_end = season_date(season)
+    kpi_row.ss_start, kpi_row.ss_end = season_date(year, season)
     
     return ["PMS_" + kpi_row.ss_start + "-" + kpi_row.ss_end + ".csv", "redmin_" + kpi_row.ss_start + "-" + kpi_row.ss_end + ".csv"]
 
@@ -978,7 +978,7 @@ def kpi_process(kpi_path, year, season, members, member_groups, option, fmt):
         kpi_interview_process(kpi_path, year, season, members, fmt)
         return
     
-    csv_list = get_kpi_csv_file_list(season)
+    csv_list = get_kpi_csv_file_list(year, season)
     kpi_row.year = year
     
     if option != "kpi_analyze":
@@ -990,4 +990,5 @@ def kpi_process(kpi_path, year, season, members, member_groups, option, fmt):
         if p == '':
             print("No kpi files for analyze.")
             return
+        kpi_row.ss_start, kpi_row.ss_end = season_date(year, season, "YYYY-MM-DD HH:MM:SS")
         kpi_analyze_process(p, members, member_groups, fmt)
