@@ -135,7 +135,7 @@ class KPIRow:
                 _tmp_v = ""
             else:
                 _tmp_v = row_list[_index]
-            print("name_index: {}, {}, {}".format(_name, _index, _tmp_v))
+            # print("name_index: {}, {}, {}".format(_name, _index, _tmp_v))
             exec("self." + _name + " = _tmp_v")
             
     def get_member_by_name(self, members, _name):
@@ -381,21 +381,6 @@ class KPIItem:
         for k in keys_list:
             self.status_counter[k] = 0
 
-    #def get_info(self):
-    #    # line_format = "{0:>40},{1:>40}"
-    #    ts = " " * 4
-    #    for s in self.name_list:
-    #        ts += s
-    #        ts += '&'
-    #    ts = ts.strip('&')
-    #    ts += ', total {0}:\n'.format(self.total)
-#
-    #    keys_list = list(self.status_counter.keys())
-    #    for k in keys_list:
-    #        if self.status_counter[k] != 0:
-    #            ts += " " * 8 + k + ': ' + str(self.status_counter[k]) + '\n'
-    #    # print(ts)
-    #    return ts
     
     def get_info(self):
         # line_format = "{0:>40},{1:>40}"
@@ -579,8 +564,10 @@ class itemREQUIREMENT(KPIItem):
         '''
         Calculate the time consumed for all requirements.
         '''
-        print(f"requirement status: {kpi_row.status}, _ddl: {self._ddl}")
-        if self._ddl == "" or kpi_row.status not in self.job_done_flags:
+        print(f"requirement status: {self.status_id}, _ddl: {self._ddl}")
+        if self._ddl == "" or self.status_id not in self.job_done_flags:
+            # skip the requirement without deadline or not in job done flags
+            print(f"requirement {kpi_row.id} skip")
             return
 
         # date difference between creation_time and _ddl

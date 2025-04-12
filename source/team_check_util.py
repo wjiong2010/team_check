@@ -38,7 +38,7 @@ def date_cvt(date):
     pattern = r'^(\d{4}\/\d{1,2}\/\d{1,2})( \d{1,2})?(:\d{2})?(:\d{2})?$'
     date_match = re.match(pattern, date)
     if date_match is None:
-        print("date format error! date:{}".format(date))
+        print("Not match YYYY\MM\DD HH:MM:SS! date:{}".format(date))
         return date
     
     print("date_match:{}, len: {}".format(date_match.groups(), len(date_match.groups())))
