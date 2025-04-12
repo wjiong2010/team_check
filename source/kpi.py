@@ -177,8 +177,14 @@ class KPIRow:
 
             c_time = "{:02d}{:02d}".format(int(_time[1]), int(_time[2]))
             print("c_time: " + c_time + " y: " + _time[0] + " self.year: " + self.year)
-            if c_time < self.ss_start and _time[0] <= self.year:
+            if _time[0] < self.year:
                 self.remark = "ignore"
+                print("remark as ignore")
+            elif c_time < self.ss_start:
+                self.remark = "ignore"
+                print("remark as ignore")
+            else:
+                print("remark as not ignore")
 
     def pre_proc(self, row_list, members):
         '''
@@ -874,6 +880,7 @@ def kpi_folder_init(r_path, csv_list, members, clear_folder = False):
         return ''
     elif clear_folder:
         for mb in members:
+            # clear if exist
             kpi_row.init_folder(sep_kpi_fold, mb.name_en)
     
     return sep_kpi_fold
