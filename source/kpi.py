@@ -84,7 +84,7 @@ class KPIRow:
             try:
                 _index = row.index(_keys[0])
             except ValueError:
-                print("error!!")
+                #print("error!!")
                 if len(_keys) > 1:
                     _index = row.index(_keys[1])
                 else:
@@ -186,7 +186,7 @@ class KPIRow:
             else:
                 print("remark as not ignore")
 
-    def pre_proc(self, row_list, members):
+    def pre_proc(self, row_list):
         '''
         Pre-process the row list.
         '''
@@ -203,7 +203,7 @@ class KPIRow:
             
             # get member from members by name
             self.member_name = self.get_name(row_list)
-            return self.get_member_by_name(members, self.member_name)
+            #return self.get_member_by_name(members, self.member_name)
 
     def __init__(self):
         self.remark = ""
@@ -426,10 +426,10 @@ class KPIItem:
         return ts
 
     def do_status_count(self, status_id):
-        try:
+        if status_id in self.status_counter.keys():
             self.status_counter[status_id] += 1
-        except KeyError:
-            print(f"status_id: {status_id} is invalid")
+        else:
+            self.status_counter.update({status_id: 1})
 
     #
     #def do_status_count(self, st):
@@ -749,7 +749,7 @@ class itemST_BUG(KPIItem):
         
         # severity: critical, major, normal
         severity = kpi_row.severity
-        print(f"st_bug severity: {severity}, value:{self.diff_total[severity]}")
+        print(f"name: {kpi_row.person_in_charge}, st_bug severity: {severity}, value:{self.diff_total[severity]}")
         self.diff_total[severity] += 1
 
         # diff days
@@ -817,7 +817,7 @@ class KPIPerformance:
 kpi_perf = KPIPerformance()
 
 class KPIForOnePerson:
-    def reset(self, r, name):
+    def reset(self):
         self.fae_bug.reset()
         self.requirement.reset()
         self.st_bug.reset()
@@ -901,9 +901,10 @@ def kpi_pre_process(r_path, csv_list, members, fmt):
             kpi_row.is_first_row = True
             reader = csv.reader(csv_f)
             for r_list in reader:
-                mb = kpi_row.pre_proc(r_list, members)
+                kpi_row.pre_proc(r_list)
+                mb = kpi_row.get_member_by_name(members, kpi_row.member_name)
+                kpi_row.is_first_row = False
                 if mb is None:
-                    kpi_row.is_first_row = False
                     continue
                 kpi_row.save_kpi_row(mb, fmt)
 
@@ -923,7 +924,7 @@ def kpi_analyze_process(r_path, members, mb_groups, fmt):
         kpi_row.is_first_row = True
         reader = csv.reader(csv_f)
         for r_list in reader:
-            kpi_row.pre_proc(r_list, members)
+            kpi_row.pre_proc(r_list)
             mb.kpi.parse_kpi_row(kpi_row)
             kpi_row.is_first_row = False
 
