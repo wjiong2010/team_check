@@ -167,22 +167,12 @@ class KPIRow:
         """
         # if a case is finished before this season, ignore it        
         if self.complete_time != "":
-            c = self.complete_time.split()
-            if c[0].find("-") != -1:
-                _time = c[0].split("-")
-            elif c[0].find("/") != -1:
-                _time = c[0].split("/")
-            else:
-                raise ValueError("Invalid date format")
-
-            c_time = "{:02d}{:02d}".format(int(_time[1]), int(_time[2]))
-            print("c_time: " + c_time + " y: " + _time[0] + " self.year: " + self.year)
-            if _time[0] < self.year:
+            print("c_time: " + self.complete_time + " ss_start: " + self.ss_start + " self.year: " + self.year)
+            
+            # ss_start - complete_time >= 0, means the case is finished before this season
+            if date_diff(self.complete_time, self.ss_start) >= 0:
                 self.remark = "ignore"
-                print("remark as ignore")
-            elif c_time < self.ss_start:
-                self.remark = "ignore"
-                print("remark as ignore")
+                print("remark as ignore2")
             else:
                 print("remark as not ignore")
 
@@ -431,20 +421,6 @@ class KPIItem:
         else:
             self.status_counter.update({status_id: 1})
 
-    #
-    #def do_status_count(self, st):
-    #    # remove the content in '（'
-    #    i = st.find('（')
-    #    if i != -1:
-    #        st = st[:i]
-    #
-    #    keys_list = list(self.status_counter.keys())
-    #    for k in keys_list:
-    #        print(f"checking {st} in {k}")
-    #        if -1 != k.find(st):
-    #            print(f"{st} in {k}")
-    #            self.status_counter[k] += 1
-    #            break
 
     def rate_calculater(self, rt_list, pre, count=0):
         print("rt_list: {}, stat: {}".format(str(rt_list), str(self.status_counter)))
@@ -583,9 +559,17 @@ class itemREQUIREMENT(KPIItem):
             # for requirement without deadline, consider it as out time
             self.out_time += 1
 
+        # date difference between deadline and complete_time
         # _diff_days = deadline - complete_time, < 0 timeout. >=0: in time
         if len(self._ddl) != 0 and len(complete_time) != 0:
-            if date_diff(complete_time, self._ddl, "days") < 0:
+            if self._ddl.find(":") == -1:
+                self._ddl += " 23:59:59"
+            if complete_time.find(":") == -1:
+                complete_time += " 23:59:59"
+            
+            print(f"requirement _ddl: {self._ddl}, complete_time: {complete_time}")
+            
+            if date_diff(complete_time, self._ddl, "minutes") < 0:
                 self.out_time += 1
                 self.out_time_list.append(kpi_row.id)
             else:
@@ -749,7 +733,7 @@ class itemST_BUG(KPIItem):
         
         # severity: critical, major, normal
         severity = kpi_row.severity
-        print(f"name: {kpi_row.person_in_charge}, st_bug severity: {severity}, value:{self.diff_total[severity]}")
+        print(f"name: {kpi_row.person_in_charge}, st_bug severity: {severity}, value:{self.diff_total[severity]}, id: {kpi_row.id}")
         self.diff_total[severity] += 1
 
         # diff days
