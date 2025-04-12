@@ -23,7 +23,11 @@ def season_date(year, season, date_type = "MMDD"):
     if date_type == "MMDD":
         return _season_dict[season][0], _season_dict[season][1]
     else:
-        return f"{year}-{_season_dict[season][0]} 00:00:00", f"{year}-{_season_dict[season][1]} 23:59:59"
+        _mm_s = _season_dict[season][0][:2]
+        _dd_s = _season_dict[season][0][2:]
+        _mm_e = _season_dict[season][1][:2]
+        _dd_e = _season_dict[season][1][2:]
+        return f"{year}-{_mm_s}-{_dd_s} 00:00:00", f"{year}-{_mm_e}-{_dd_e} 23:59:59"
 
 
 def date_cvt(date):
@@ -52,9 +56,11 @@ def date_cvt(date):
 
 def date_diff(start_date, end_date, date_type = "days"):
     '''
-    Calculate the difference between two dates.
-    start_date: 2025/2/10  09:10:32
-    end_date: 2024/3/29  00:00:00
+    Calculate the difference between two dates. end_date - start_date
+    :param start_date: 2025/2/10 09:10:32
+    :param end_date: 2024/3/29 00:00:00
+    :param date_type: days, hours, minutes or seconds
+    :return: return the difference in days, hours, minutes or seconds.
     '''
     assert(len(start_date) != 0)
     assert(len(end_date) != 0)
