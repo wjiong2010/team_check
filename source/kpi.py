@@ -408,7 +408,7 @@ class KPIItem:
 
 
     def rate_calculater(self, rt_list, pre, count=0):
-        print("rt_list: {}, stat: {}".format(str(rt_list), str(self.status_counter)))
+        # print("rt_list: {}, stat: {}".format(str(rt_list), str(self.status_counter)))
         if self.total == 0:
             return " " * 4 + pre + " null"
 
